@@ -26,6 +26,7 @@ import org.wordpress.android.ui.voicetocontent.VoiceToContentUIStateType.RECORDI
 import org.wordpress.android.util.audio.IAudioRecorder
 import org.wordpress.android.util.audio.IAudioRecorder.AudioRecorderResult.Error
 import org.wordpress.android.util.audio.IAudioRecorder.AudioRecorderResult.Success
+import org.wordpress.android.util.audio.RecordingStrategy
 import org.wordpress.android.util.audio.RecordingUpdate
 import org.wordpress.android.viewmodel.ContextProvider
 import org.wordpress.android.viewmodel.ScopedViewModel
@@ -55,6 +56,9 @@ class VoiceToContentViewModel @Inject constructor(
 
     private val _onIneligibleForVoiceToContent = MutableLiveData<String>()
     val onIneligibleForVoiceToContent = _onIneligibleForVoiceToContent as LiveData<String>
+
+    private val _isCancelableOutsideTouch = MutableLiveData(true)
+    val isCancelableOutsideTouch: LiveData<Boolean> get() = _isCancelableOutsideTouch
 
     private var isStarted = false
 
@@ -104,6 +108,10 @@ class VoiceToContentViewModel @Inject constructor(
         isStarted = true
     }
 
+    fun onBottomSheetClosed() {
+        recordingUseCase.endRecordingSession()
+    }
+
     // Recording
     private fun updateRecordingData(recordingUpdate: RecordingUpdate) {
         _recordingUpdate.value = recordingUpdate
@@ -125,9 +133,11 @@ class VoiceToContentViewModel @Inject constructor(
 
     private fun startRecording() {
         transitionToRecording()
+        disableDialogCancelableOutsideTouch()
         recordingUseCase.startRecording { audioRecorderResult ->
             when (audioRecorderResult) {
                 is Success -> {
+                    transitionToProcessing()
                     val file = getRecordingFile(audioRecorderResult.recordingPath)
                     file?.let {
                         executeVoiceToContent(it)
@@ -141,6 +151,10 @@ class VoiceToContentViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun disableDialogCancelableOutsideTouch() {
+        _isCancelableOutsideTouch.value = false
     }
 
     @Suppress("ReturnCount")
@@ -206,6 +220,7 @@ class VoiceToContentViewModel @Inject constructor(
 
     private fun onClose() {
         logger.track(Stat.VOICE_TO_CONTENT_BUTTON_CLOSE_TAPPED)
+        recordingUseCase.endRecordingSession()
         _dismiss.postValue(Unit)
     }
 
@@ -271,8 +286,9 @@ class VoiceToContentViewModel @Inject constructor(
             uiStateType = RECORDING,
             header = currentState.header.copy(label = R.string.voice_to_content_recording_label),
             secondaryHeader = currentState.secondaryHeader?.copy(
-                timeElapsed = "00:00:00",
-                isTimeElapsedVisible = true
+                isTimeElapsedVisible = true,
+                timeMaxDurationInSeconds = MAX_DURATION,
+                isLabelVisible = false
             ),
             recordingPanel = currentState.recordingPanel?.copy(
                 onStopTap = ::onStopTap,
@@ -325,6 +341,7 @@ class VoiceToContentViewModel @Inject constructor(
         private val NetworkUnavailableMsg = R.string.error_network_connection
         private val GenericFailureMsg = R.string.voice_to_content_generic_error
         private const val VOICE_TO_CONTENT = "Voice to content"
+        private val MAX_DURATION = RecordingStrategy.VoiceToContentRecordingStrategy().maxDuration
     }
 }
 
