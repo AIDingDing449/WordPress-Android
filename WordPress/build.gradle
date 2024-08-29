@@ -190,7 +190,6 @@ android {
         buildConfigField "boolean", "CONTACT_SUPPORT_CHATBOT", "false"
         buildConfigField "boolean", "ENABLE_DOMAIN_MANAGEMENT_FEATURE", "false"
         buildConfigField "boolean", "PLANS_IN_SITE_CREATION", "false"
-        buildConfigField "boolean", "READER_IMPROVEMENTS", "false"
         buildConfigField "boolean", "BLOGANUARY_DASHBOARD_NUDGE", "false"
         buildConfigField "boolean", "DYNAMIC_DASHBOARD_CARDS", "false"
         buildConfigField "boolean", "STATS_TRAFFIC_SUBSCRIBERS_TABS", "false"
@@ -613,16 +612,6 @@ dependencies {
     implementation "me.saket.cascade:cascade-compose:2.3.0"
 
     implementation "com.automattic.tracks:crashlogging:$automatticTracksVersion"
-
-    // - Flipper
-    debugImplementation ("com.facebook.flipper:flipper:$flipperVersion") {
-        exclude group:'org.jetbrains.kotlinx', module:'kotlinx-serialization-json-jvm'
-    }
-    debugImplementation "com.facebook.soloader:soloader:$soLoaderVersion"
-    debugImplementation ("com.facebook.flipper:flipper-network-plugin:$flipperVersion"){
-        exclude group:'org.jetbrains.kotlinx', module:'kotlinx-serialization-json-jvm'
-    }
-    releaseImplementation "com.facebook.flipper:flipper-noop:$flipperVersion"
 }
 
 configurations.all {
