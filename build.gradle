@@ -61,7 +61,7 @@ ext {
     androidxViewpager2Version = '1.1.0'
     androidxWorkManagerVersion = "2.9.1"
     androidxComposeMaterial3Version = '1.2.1'
-    androidxWebkitVersion =  '1.11.0'
+    androidxWebkitVersion =  '1.12.0'
     apacheCommonsTextVersion = '1.12.0'
     coilComposeVersion = '2.7.0'
     chrisbanesPhotoviewVersion = '2.3.0'
@@ -107,7 +107,6 @@ ext {
     androidxTestExtJunitVersion = '1.2.1'
     androidxTestUiAutomatorVersion = '2.3.0'
     screengrabVersion = '2.1.1'
-    squareupMockWebServerVersion = '4.12.0'
     wiremockVersion = '2.26.3'
     wiremockHttpClientVersion = '4.3.5.1'
 
