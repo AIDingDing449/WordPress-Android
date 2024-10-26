@@ -43,7 +43,7 @@ ext {
     gravatarSdkVersion = '0.2.0'
 
     // main
-    androidxAppCompatVersion = '1.6.1'
+    androidxAppCompatVersion = '1.7.0'
     androidxCoreVersion = '1.12.0'
     androidxConstraintLayoutVersion = '2.1.4'
     daggerVersion = '2.52'
