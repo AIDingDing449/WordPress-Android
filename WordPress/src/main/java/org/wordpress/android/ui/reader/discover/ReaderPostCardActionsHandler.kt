@@ -425,6 +425,13 @@ class ReaderPostCardActionsHandler @Inject constructor(
                                     coroutineScope.launch {
                                         undoBlockBlogUseCase.undoBlockBlog(it.blockedBlogData, source)
                                         _refreshPosts.postValue(Event(Unit))
+                                        _snackbarEvents.postValue(
+                                            Event(
+                                                SnackbarMessageHolder(
+                                                    UiStringRes(R.string.reader_toast_success_undo)
+                                                )
+                                            )
+                                        )
                                         updateBlockedStateFunction?.let { func -> func(false) }
                                     }
                                 })

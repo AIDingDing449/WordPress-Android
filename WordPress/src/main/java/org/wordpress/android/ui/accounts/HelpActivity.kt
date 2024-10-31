@@ -112,7 +112,7 @@ class HelpActivity : LocaleAwareActivity() {
                 showContactUs()
             }
 
-            if(BuildConfig.DEBUG && BuildConfig.ENABLE_DEBUG_SETTINGS) {
+            if (BuildConfig.DEBUG && BuildConfig.ENABLE_DEBUG_SETTINGS) {
                 enableDebugSettings()
             }
 
@@ -120,6 +120,10 @@ class HelpActivity : LocaleAwareActivity() {
             applicationVersion.text = getString(R.string.version_with_name_param, WordPress.versionName)
             logsButton.setOnClickListener { v ->
                 startActivity(Intent(v.context, AppLogViewerActivity::class.java))
+            }
+
+            feedbackButton.setOnClickListener {
+                ActivityLauncher.viewFeedbackForm(this@HelpActivity)
             }
 
             if (originFromExtras == Origin.JETPACK_MIGRATION_HELP) {

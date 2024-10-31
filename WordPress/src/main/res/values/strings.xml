@@ -2300,6 +2300,7 @@
     <string name="reader_toast_err_unable_to_unfollow_blog">Unable to unsubscribe from blog</string>
     <string name="reader_toast_posts_from_this_blog_blocked">Posts from this blog will no longer be shown</string>
     <string name="reader_toast_err_unable_to_block_blog">Unable to block this blog</string>
+    <string name="reader_toast_success_undo">Blog unblocked</string>
     <string name="reader_toast_user_blocked">Posts from this user will no longer be shown</string>
     <string name="reader_toast_err_generic">Unable to perform this action</string>
     <string name="reader_toast_err_cannot_like_post">Failed to like this post</string>
@@ -2577,7 +2578,6 @@
     <string name="me_profile_photo">Profile Photo</string>
     <string name="me_btn_app_settings">App Settings</string>
     <string name="me_btn_help_and_support">Help &amp; Support</string>
-    <string name="me_btn_feedback">Send feedback</string>
     <string name="me_btn_share">Share WordPress with a friend</string>
     <string name="me_btn_about">About WordPress</string>
     <string name="me_btn_login_logout">Login/Logout</string>
@@ -2959,6 +2959,7 @@
     <string name="let_us_help">Let Us Help</string>
     <string name="start_over_text">If you want a site but don\'t want any of the posts and pages you have now, our support team can delete your posts, pages, media and comments for you.\n\nThis will keep your site and URL active, but give you a fresh start on your content creation. Just contact us to have your current content cleared out.</string>
     <string name="contact_support">Contact Support</string>
+    <string name="send_feedback">Send feedback</string>
     <string name="confirm_delete_site">Confirm Delete Site</string>
     <string name="confirm_delete_site_prompt">Please type in %1$s in the field below to confirm. Your site will then be gone forever.</string>
     <string name="site_settings_export_content_title">Export content</string>
