@@ -123,7 +123,6 @@ android {
         buildConfigField "String", "PUSH_NOTIFICATIONS_APP_KEY", '"org.wordpress.android"'
         buildConfigField "boolean", "MP4_COMPOSER_VIDEO_OPTIMIZATION", "false"
         buildConfigField "boolean", "MANAGE_CATEGORIES", "false"
-        buildConfigField "boolean", "GLOBAL_STYLE_SUPPORT", "true"
         buildConfigField "boolean", "QUICK_START_DYNAMIC_CARDS", "false"
         buildConfigField "boolean", "RECOMMEND_THE_APP", "false"
         buildConfigField "boolean", "UNIFIED_COMMENTS_DETAILS", "false"

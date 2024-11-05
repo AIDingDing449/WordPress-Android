@@ -1,16 +1,23 @@
 package org.wordpress.android.ui.bloggingprompts.promptslist.compose
 
-import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,13 +32,13 @@ import org.wordpress.android.ui.bloggingprompts.promptslist.BloggingPromptsListV
 import org.wordpress.android.ui.bloggingprompts.promptslist.BloggingPromptsListViewModel.UiState.NetworkError
 import org.wordpress.android.ui.bloggingprompts.promptslist.BloggingPromptsListViewModel.UiState.None
 import org.wordpress.android.ui.bloggingprompts.promptslist.model.BloggingPromptsListItemModel
-import org.wordpress.android.ui.compose.components.EmptyContent
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.components.EmptyContentM3
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 
+private val emptyContentModifier: Modifier = Modifier.fillMaxSize()
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 fun BloggingPromptsListScreen(
     uiState: UiState,
     onNavigateUp: () -> Unit,
@@ -39,14 +46,26 @@ fun BloggingPromptsListScreen(
 ) {
     Scaffold(
         topBar = {
-            MainTopAppBar(
-                title = stringResource(R.string.blogging_prompts_list_title),
-                navigationIcon = NavigationIcons.BackIcon,
-                onNavigationIconClick = onNavigateUp
+            TopAppBar(
+                title = {
+                    Text(text = stringResource(R.string.blogging_prompts_list_title))
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            stringResource(R.string.back)
+                        )
+                    }
+                },
             )
         },
-    ) {
-        Surface(modifier = Modifier.fillMaxSize()) {
+    ) { contentPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+        ) {
             when (uiState) {
                 is Content -> ListContent(uiState.content, onItemClick)
                 Loading -> LoadingContent()
@@ -68,7 +87,7 @@ private fun ListContent(
     } else {
         LazyColumn(Modifier.fillMaxSize()) {
             itemsIndexed(promptsList) { index, item ->
-                if (index != 0) Divider()
+                if (index != 0) HorizontalDivider()
 
                 BloggingPromptsListItem(
                     model = item,
@@ -82,10 +101,10 @@ private fun ListContent(
 
 @Composable
 private fun NoContent() {
-    EmptyContent(
+    EmptyContentM3(
         title = stringResource(R.string.blogging_prompts_list_no_prompts),
         image = R.drawable.img_illustration_empty_results_216dp,
-        modifier = Modifier.fillMaxSize(),
+        modifier = emptyContentModifier,
     )
 }
 
@@ -101,21 +120,21 @@ private fun LoadingContent() {
 
 @Composable
 private fun FetchErrorContent() {
-    EmptyContent(
+    EmptyContentM3(
         title = stringResource(R.string.blogging_prompts_list_error_fetch_title),
         subtitle = stringResource(R.string.blogging_prompts_list_error_fetch_subtitle),
         image = R.drawable.img_illustration_empty_results_216dp,
-        modifier = Modifier.fillMaxSize(),
+        modifier = emptyContentModifier,
     )
 }
 
 @Composable
 private fun NetworkErrorContent() {
-    EmptyContent(
+    EmptyContentM3(
         title = stringResource(R.string.no_connection_error_title),
         subtitle = stringResource(R.string.no_connection_error_description),
         image = R.drawable.img_illustration_cloud_off_152dp,
-        modifier = Modifier.fillMaxSize(),
+        modifier = emptyContentModifier,
     )
 }
 
@@ -125,7 +144,11 @@ private fun NetworkErrorContent() {
 fun BloggingPromptsListScreenPreview(
     @PreviewParameter(provider = BloggingPromptsListScreenPreviewProvider::class) uiState: UiState
 ) {
-    AppThemeM2 {
-        BloggingPromptsListScreen(uiState = uiState, onNavigateUp = {}, onItemClick = {})
+    AppThemeM3 {
+        BloggingPromptsListScreen(
+            uiState = uiState,
+            onNavigateUp = {},
+            onItemClick = {}
+        )
     }
 }

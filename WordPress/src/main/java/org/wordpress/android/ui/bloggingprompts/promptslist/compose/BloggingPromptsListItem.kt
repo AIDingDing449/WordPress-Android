@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import org.wordpress.android.R
 import org.wordpress.android.ui.bloggingprompts.promptslist.model.BloggingPromptsListItemModel
 import org.wordpress.android.ui.compose.theme.AppColor
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.unit.FontSize
 import org.wordpress.android.ui.compose.unit.Margin
 import org.wordpress.android.ui.compose.utils.asString
@@ -50,7 +50,7 @@ fun BloggingPromptsListItem(
     Column(
         modifier = modifier
             .semantics(mergeDescendants = true) { }
-            .background(MaterialTheme.colors.surface)
+            .background(MaterialTheme.colorScheme.surface)
             .clickable { onClick(model) }
             .padding(Margin.ExtraLarge.value),
         verticalArrangement = Arrangement.spacedBy(Margin.Small.value),
@@ -108,7 +108,7 @@ private fun ItemSubtitleDivider() {
 fun BloggingPromptsListItemPreview(
     @PreviewParameter(BloggingPromptsListItemPreviewProvider::class) model: BloggingPromptsListItemModel
 ) {
-    AppThemeM2 {
+    AppThemeM3 {
         BloggingPromptsListItem(model, onClick = {})
     }
 }

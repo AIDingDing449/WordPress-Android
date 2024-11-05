@@ -11,7 +11,6 @@ import org.wordpress.android.fluxc.store.EditorThemeStore
 import org.wordpress.android.ui.prefs.AppPrefs
 import org.wordpress.android.ui.prefs.AppPrefsWrapper
 import org.wordpress.android.ui.prefs.SiteSettingsInterfaceWrapper
-import org.wordpress.android.util.config.GlobalStyleSupportFeatureConfig
 import org.wordpress.android.util.mapSafe
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +20,6 @@ class SelectedSiteRepository @Inject constructor(
     private val dispatcher: Dispatcher,
     private val siteSettingsInterfaceFactory: SiteSettingsInterfaceWrapper.Factory,
     private val appPrefsWrapper: AppPrefsWrapper,
-    private val globalStyleSupportFeatureConfig: GlobalStyleSupportFeatureConfig,
 ) {
     private var siteSettings: SiteSettingsInterfaceWrapper? = null
 
@@ -95,7 +93,7 @@ class SelectedSiteRepository @Inject constructor(
     }
 
     private fun fetchEditorTheme(site: SiteModel) {
-        EditorThemeStore.FetchEditorThemePayload(site, globalStyleSupportFeatureConfig.isEnabled()).let {
+        EditorThemeStore.FetchEditorThemePayload(site, gssEnabled = true).let {
             dispatcher.dispatch(EditorThemeActionBuilder.newFetchEditorThemeAction(it))
         }
     }

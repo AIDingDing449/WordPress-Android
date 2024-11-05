@@ -44,7 +44,6 @@ import org.wordpress.android.ui.utils.UiString
 import org.wordpress.android.util.AppLog
 import org.wordpress.android.util.LocaleManagerWrapper
 import org.wordpress.android.util.SiteUtils
-import org.wordpress.android.util.config.GlobalStyleSupportFeatureConfig
 import org.wordpress.android.util.config.SiteEditorMVPFeatureConfig
 import org.wordpress.android.util.extensions.toFormattedDateString
 import org.wordpress.android.viewmodel.ScopedViewModel
@@ -70,7 +69,6 @@ class PageListViewModel @Inject constructor(
     private val dispatcher: Dispatcher,
     private val localeManagerWrapper: LocaleManagerWrapper,
     private val accountStore: AccountStore,
-    private val globalStyleSupportFeatureConfig: GlobalStyleSupportFeatureConfig,
     private val editorThemeStore: EditorThemeStore,
     private val siteEditorMVPFeatureConfig: SiteEditorMVPFeatureConfig,
     private val blazeFeatureUtils: BlazeFeatureUtils,
@@ -167,7 +165,7 @@ class PageListViewModel @Inject constructor(
         isBlockBasedTheme.value = editorThemeStore.getIsBlockBasedTheme(pagesViewModel.site)
 
         // Dispatch action to refresh the values from the remote
-        FetchEditorThemePayload(pagesViewModel.site, globalStyleSupportFeatureConfig.isEnabled()).let {
+        FetchEditorThemePayload(pagesViewModel.site, gssEnabled = true).let {
             dispatcher.dispatch(EditorThemeActionBuilder.newFetchEditorThemeAction(it))
         }
     }

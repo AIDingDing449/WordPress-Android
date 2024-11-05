@@ -21,7 +21,6 @@ import org.wordpress.android.fluxc.annotations.action.Action
 import org.wordpress.android.fluxc.model.SiteModel
 import org.wordpress.android.ui.prefs.AppPrefsWrapper
 import org.wordpress.android.ui.prefs.SiteSettingsInterfaceWrapper
-import org.wordpress.android.util.config.GlobalStyleSupportFeatureConfig
 
 @ExperimentalCoroutinesApi
 class SelectedSiteRepositoryTest : BaseUnitTest() {
@@ -36,9 +35,6 @@ class SelectedSiteRepositoryTest : BaseUnitTest() {
 
     @Mock
     lateinit var appPrefsWrapper: AppPrefsWrapper
-
-    @Mock
-    lateinit var globalStyleSupportFeatureConfig: GlobalStyleSupportFeatureConfig
 
     private lateinit var siteModel: SiteModel
     private var siteIconProgressBarVisible: Boolean = false
@@ -56,7 +52,6 @@ class SelectedSiteRepositoryTest : BaseUnitTest() {
             dispatcher,
             siteSettingsInterfaceFactory,
             appPrefsWrapper,
-            globalStyleSupportFeatureConfig
         )
         selectedSiteRepository.showSiteIconProgressBar.observeForever { siteIconProgressBarVisible = it == true }
         selectedSiteRepository.selectedSiteChange.observeForever { selectedSite = it }

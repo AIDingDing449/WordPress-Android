@@ -233,7 +233,6 @@ import org.wordpress.android.util.analytics.AnalyticsTrackerWrapper
 import org.wordpress.android.util.analytics.AnalyticsUtils
 import org.wordpress.android.util.analytics.AnalyticsUtils.BlockEditorEnabledSource
 import org.wordpress.android.util.config.ContactSupportFeatureConfig
-import org.wordpress.android.util.config.GlobalStyleSupportFeatureConfig
 import org.wordpress.android.util.config.PostConflictResolutionFeatureConfig
 import org.wordpress.android.util.config.NewGutenbergFeatureConfig
 import org.wordpress.android.util.config.NewGutenbergThemeStylesFeatureConfig
@@ -398,8 +397,6 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
     @Inject lateinit var mediaPickerLauncher: MediaPickerLauncher
 
     @Inject lateinit var updateFeaturedImageUseCase: UpdateFeaturedImageUseCase
-
-    @Inject lateinit var globalStyleSupportFeatureConfig: GlobalStyleSupportFeatureConfig
 
     @Inject lateinit var zendeskHelper: ZendeskHelper
 
@@ -3933,7 +3930,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
     }
 
     private fun refreshEditorTheme() {
-        val payload = FetchEditorThemePayload(siteModel, globalStyleSupportFeatureConfig.isEnabled())
+        val payload = FetchEditorThemePayload(siteModel, gssEnabled = true)
         dispatcher.dispatch(EditorThemeActionBuilder.newFetchEditorThemeAction(payload))
     }
 
