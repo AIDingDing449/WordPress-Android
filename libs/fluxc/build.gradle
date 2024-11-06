@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kapt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
     alias(libs.plugins.kotlinx.kover)
 }
 
@@ -13,18 +15,12 @@ android {
 
     namespace "org.wordpress.android.fluxc"
 
-    compileSdkVersion rootProject.compileSdkVersion
-
     defaultConfig {
+        compileSdk rootProject.compileSdkVersion
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += [
-                        "room.schemaLocation":"$projectDir/schemas".toString(),
-                        "room.incremental":"true",
-                        "room.expandProjection":"true"]
-            }
+        room {
+            schemaDirectory "$projectDir/schemas"
         }
         consumerProguardFiles 'consumer-rules.pro'
     }
@@ -99,12 +95,12 @@ dependencies {
     implementation libs.apache.commons.text
     api libs.androidx.paging.runtime
     implementation libs.androidx.room.runtime
-    kapt libs.androidx.room.compiler
+    ksp libs.androidx.room.compiler
     implementation libs.androidx.room.ktx
 
     // Dagger
     implementation libs.google.dagger
-    kapt libs.google.dagger.compiler
+    ksp libs.google.dagger.compiler
 
     // Coroutines
     implementation libs.kotlinx.coroutines.core

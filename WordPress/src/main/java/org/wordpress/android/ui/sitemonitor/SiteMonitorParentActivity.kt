@@ -18,20 +18,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,9 +56,7 @@ import org.wordpress.android.R
 import org.wordpress.android.WordPress
 import org.wordpress.android.fluxc.model.SiteModel
 import org.wordpress.android.ui.WPWebViewActivity
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.utils.uiStringText
 import org.wordpress.android.util.extensions.getSerializableExtraCompat
 import javax.inject.Inject
@@ -114,8 +117,9 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
             siteMonitorParentViewModel.start(getSite())
             currentSelectItemId = getInitialTab()
         }
+
         setContent {
-            AppThemeM2 {
+            AppThemeM3 {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -145,34 +149,37 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
         }
     }
 
-    companion object {
-        const val ARG_SITE_MONITOR_TYPE_KEY = "ARG_SITE_MONITOR_TYPE_KEY"
-        const val SAVED_STATE_CONTAINER_KEY = "ContainerKey"
-        const val SAVED_STATE_CURRENT_TAB_KEY = "CurrentTabKey"
-    }
-
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
-    fun SiteMonitorScreen(initialTab: Int, modifier: Modifier = Modifier) {
+    fun SiteMonitorScreen(initialTab: Int) {
         Scaffold(
             topBar = {
-                MainTopAppBar(
-                    title = stringResource(id = R.string.site_monitoring),
-                    navigationIcon = NavigationIcons.BackIcon,
-                    onNavigationIconClick = onBackPressedDispatcher::onBackPressed,
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.site_monitoring)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressedDispatcher::onBackPressed) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                stringResource(R.string.back)
+                            )
+                        }
+                    },
                 )
             },
-            content = {
-                SiteMonitorHeader(initialTab, modifier = modifier)
-            }
-        )
+        ) { contentPadding ->
+            SiteMonitorHeader(initialTab, modifier = Modifier.padding(contentPadding))
+        }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     fun SiteMonitorHeader(initialTab: Int, modifier: Modifier = Modifier) {
         var tabIndex by remember { mutableIntStateOf(initialTab) }
-
         val tabs = SiteMonitorTabItem.entries
 
         LaunchedEffect(true) {
@@ -180,29 +187,27 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
         }
 
         Column(modifier = modifier.fillMaxWidth()) {
-            TabRow(
+            PrimaryTabRow(
                 selectedTabIndex = tabIndex,
-                containerColor = MaterialTheme.colors.surface,
-                contentColor = MaterialTheme.colors.onSurface,
-                indicator = { tabPositions ->
-                    // Customizing the indicator color and style
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                indicator = {
                     TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[tabIndex]),
-                        color = MaterialTheme.colors.onSurface,
-                        height = 2.0.dp
+                        color = MaterialTheme.colorScheme.onSurface,
+                        height = 2.0.dp,
+                        modifier = Modifier.tabIndicatorOffset(tabIndex)
                     )
                 }
             ) {
                 tabs.forEachIndexed { index, item ->
                     Tab(
                         text = {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = stringResource(item.title).uppercase(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                            Text(
+                                text = stringResource(item.title).uppercase(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontWeight = FontWeight.Normal
+                            )
                         },
                         selected = tabIndex == index,
                         onClick = {
@@ -226,11 +231,14 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
             siteMonitorParentViewModel.getUiState(tabType)
         }
         when (uiState) {
-            is SiteMonitorUiState.Preparing -> LoadingState(modifier)
+            is SiteMonitorUiState.Preparing ->
+                LoadingState(modifier)
+
             is SiteMonitorUiState.Prepared, is SiteMonitorUiState.Loaded ->
                 SiteMonitorWebViewContent(uiState, tabType, modifier)
 
-            is SiteMonitorUiState.Error -> SiteMonitorError(uiState as SiteMonitorUiState.Error, modifier)
+            is SiteMonitorUiState.Error ->
+                SiteMonitorError(uiState as SiteMonitorUiState.Error, modifier)
         }
     }
 
@@ -241,7 +249,7 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
             modifier = modifier.fillMaxSize()
         ) {
             CircularProgressIndicator(
-                color = MaterialTheme.colors.onSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -256,14 +264,14 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
                 .fillMaxWidth()
                 .fillMaxHeight(),
         ) {
-            androidx.compose.material.Text(
+            Text(
                 text = uiStringText(uiString = error.title),
-                style = androidx.compose.material.MaterialTheme.typography.h5,
+                style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
-            androidx.compose.material.Text(
+            Text(
                 text = uiStringText(uiString = error.description),
-                style = androidx.compose.material.MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -285,43 +293,54 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
         tabType: SiteMonitorType,
         modifier: Modifier = Modifier
     ) {
-        // retrieve the webview from the actvity
         val webView = when (tabType) {
             SiteMonitorType.METRICS -> metricsWebView
             SiteMonitorType.PHP_LOGS -> phpLogsWebView
             SiteMonitorType.WEB_SERVER_LOGS -> webServerLogsWebView
         }
 
-        when(uiState) {
+        when (uiState) {
             is SiteMonitorUiState.Prepared -> {
                 webView.postUrl(WPWebViewActivity.WPCOM_LOGIN_URL, uiState.model.addressToLoad.toByteArray())
                 LoadingState()
             }
+
             is SiteMonitorUiState.Loaded -> {
                 SiteMonitorWebView(webView, tabType, modifier)
             }
+
             else -> {}
         }
     }
 
-    @OptIn(ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun SiteMonitorWebView(tabWebView: WebView, tabType: SiteMonitorType, modifier: Modifier = Modifier) {
+    private fun SiteMonitorWebView(
+        tabWebView: WebView,
+        tabType: SiteMonitorType,
+        modifier: Modifier = Modifier
+    ) {
         // the webview is retrieved from the activity, so we need to use a mutable variable
         // to assign to android view
         var webView = tabWebView
 
         val refreshState = siteMonitorParentViewModel.getRefreshState(tabType)
+        val pullToRefreshState = rememberPullToRefreshState()
 
-        val pullRefreshState = rememberPullRefreshState(
-            refreshing = refreshState.value,
-            onRefresh = { siteMonitorParentViewModel.refreshData(tabType) }
-        )
-
-        Box(
+        PullToRefreshBox(
             modifier = modifier
-                .fillMaxSize()
-                .pullRefresh(pullRefreshState)
+                .fillMaxSize(),
+            isRefreshing = refreshState.value,
+            state = pullToRefreshState,
+            onRefresh = { siteMonitorParentViewModel.refreshData(tabType) },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = refreshState.value,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
         ) {
             LazyColumn(modifier = Modifier.fillMaxHeight()) {
                 item {
@@ -332,12 +351,6 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
                     )
                 }
             }
-            PullRefreshIndicator(
-                refreshing = refreshState.value,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                contentColor = MaterialTheme.colors.primaryVariant,
-            )
         }
     }
 
@@ -354,5 +367,11 @@ class SiteMonitorParentActivity : AppCompatActivity(), SiteMonitorWebViewClient.
     override fun onWebViewReceivedError(url: String, tabType: SiteMonitorType) {
         siteMonitorParentViewModel.onWebViewError(tabType)
         siteMonitorUtils.trackTabLoadingError(tabType)
+    }
+
+    companion object {
+        const val ARG_SITE_MONITOR_TYPE_KEY = "ARG_SITE_MONITOR_TYPE_KEY"
+        const val SAVED_STATE_CONTAINER_KEY = "ContainerKey"
+        const val SAVED_STATE_CURRENT_TAB_KEY = "CurrentTabKey"
     }
 }

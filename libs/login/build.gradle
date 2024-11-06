@@ -1,16 +1,15 @@
 plugins {
-    id "com.android.library"
-    id "org.jetbrains.kotlin.android"
-    id "org.jetbrains.kotlin.kapt"
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlinx.kover)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace "org.wordpress.android.login"
 
-    compileSdkVersion rootProject.compileSdkVersion
-
     defaultConfig {
+        compileSdk rootProject.compileSdkVersion
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
     }
@@ -39,16 +38,16 @@ dependencies {
     implementation project(":libs:fluxc")
 
     implementation libs.bumptech.glide.main
-    kapt libs.bumptech.glide.compiler
+    ksp libs.bumptech.glide.ksp
 
     implementation libs.androidx.credentials.main
     implementation libs.androidx.credentials.play.service.auth
 
     // Dagger
     implementation libs.google.dagger
-    kapt libs.google.dagger.compiler
+    ksp libs.google.dagger.compiler
     implementation libs.google.dagger.android.support
-    kapt libs.google.dagger.android.processor
+    ksp libs.google.dagger.android.processor
 
     lintChecks libs.wordpress.lint
 
