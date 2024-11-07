@@ -3,7 +3,7 @@ package org.wordpress.android.ui.voicetocontent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,7 +23,7 @@ fun WaveformOblongVisualizer(recordingUpdate: RecordingUpdate, currentPosition: 
     val minRadius = 50f  // increased minimum radius for the oblongs
     val maxAmplitude = 32767f // maximum possible amplitude from MediaRecorder
     val oblongWidth = 20f // fixed width of the oblongs
-    val color = MaterialTheme.colors.primary
+    val color = MaterialTheme.colorScheme.primary
 
     Canvas(modifier = Modifier
         .fillMaxWidth()

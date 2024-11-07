@@ -15,8 +15,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.wordpress.android.R
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 
 @OptIn(ExperimentalAnimationApi::class)
 @Suppress("DEPRECATION")
@@ -41,14 +40,14 @@ fun MicToStopIcon(model: RecordingPanelUIModel, isRecording: Boolean) {
     val isLight = !isSystemInDarkTheme()
 
     val circleColor by animateColorAsState(
-        targetValue = if (!isEnabled) MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
-        else if (isMic) MaterialTheme.colors.primary
+        targetValue = if (!isEnabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        else if (isMic) MaterialTheme.colorScheme.primary
         else if (isLight) Color.Black
         else Color.White, label = ""
     )
 
     val iconColor by animateColorAsState(
-        targetValue = if (!isEnabled) MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+        targetValue = if (!isEnabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         else if (isMic) Color.White
         else if (isLight) Color.White
         else Color.Black, label = ""
@@ -115,7 +114,7 @@ fun MicToStopIcon(model: RecordingPanelUIModel, isRecording: Boolean) {
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun ExistingLayoutPreview() {
-    AppThemeM2 {
+    AppThemeM3 {
         MicToStopIcon(
             RecordingPanelUIModel(
                 isEligibleForFeature = true,

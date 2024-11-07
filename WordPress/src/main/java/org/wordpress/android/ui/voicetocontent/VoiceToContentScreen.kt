@@ -18,12 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
@@ -52,7 +51,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import org.wordpress.android.R
 import org.wordpress.android.ui.compose.components.buttons.Drawable
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.util.audio.RecordingUpdate
 import java.util.Locale
 
@@ -85,7 +84,7 @@ fun VoiceToContentScreen(
         modifier = Modifier
             .fillMaxWidth()
             .height(bottomSheetHeight),
-        color = MaterialTheme.colors.surface
+        color = MaterialTheme.colorScheme.surface
     ) {
         Box(
             modifier = Modifier
@@ -108,7 +107,7 @@ fun VoiceToContentView(state: VoiceToContentUiState,
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .background(MaterialTheme.colors.surface) // Use theme-aware background color
+            .background(MaterialTheme.colorScheme.surface) // Use theme-aware background color
     ) {
         when (state.uiStateType) {
             VoiceToContentUIStateType.PROCESSING -> ProcessingView(state)
@@ -326,7 +325,7 @@ fun ClickableTextViewWithLinkImage(
                     }
                     .size(16.dp),
                 painter = painterResource(id = drawable.resId),
-                colorFilter = ColorFilter.tint(MaterialTheme.colors.primary),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                 contentDescription = null
             )
         }
@@ -336,53 +335,53 @@ fun ClickableTextViewWithLinkImage(
 
 private val headerStyle: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(
+    get() = MaterialTheme.typography.bodyLarge.copy(
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high)
+        color = MaterialTheme.colorScheme.onSurface
     )
 
 private val secondaryHeaderStyle: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.bodySmall.copy(
+    get() = MaterialTheme.typography.bodySmall.copy(
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+        color = MaterialTheme.colorScheme.onSurface
     )
 
 private val actionLabelStyle: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high)
+    get() = MaterialTheme.typography.bodyMedium.copy(
+        color = MaterialTheme.colorScheme.onSurface
     )
 
 private val actionLabelStyleDisabled: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+    get() = MaterialTheme.typography.bodyMedium.copy(
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 
 private val errorMessageStyle: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
+    get() = MaterialTheme.typography.titleMedium.copy(
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high)
+        color = MaterialTheme.colorScheme.onSurface
     )
 
 private val errorUrlLinkCTA: TextStyle
     @Composable
-    get() = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
+    get() = MaterialTheme.typography.titleMedium.copy(
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        color = MaterialTheme.colors.primary
+        color = MaterialTheme.colorScheme.primary
     )
 
 @Preview(showBackground = true)
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewInitializingView() {
-    AppThemeM2 {
+    AppThemeM3 {
         val state = VoiceToContentUiState(
             uiStateType = VoiceToContentUIStateType.INITIALIZING,
             header = HeaderUIModel(label = R.string.voice_to_content_base_header_label, onClose = { }),
@@ -404,7 +403,7 @@ fun PreviewInitializingView() {
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewReadyToRecordView() {
-    AppThemeM2 {
+    AppThemeM3 {
         val state = VoiceToContentUiState(
             uiStateType = VoiceToContentUIStateType.READY_TO_RECORD,
             header = HeaderUIModel(label = R.string.voice_to_content_base_header_label, onClose = { }),
@@ -426,7 +425,7 @@ fun PreviewReadyToRecordView() {
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewNotEligibleToRecordView() {
-    AppThemeM2 {
+    AppThemeM3 {
         val state = VoiceToContentUiState(
             uiStateType = VoiceToContentUIStateType.INELIGIBLE_FOR_FEATURE,
             header = HeaderUIModel(label = R.string.voice_to_content_base_header_label, onClose = { }),
@@ -447,7 +446,7 @@ fun PreviewNotEligibleToRecordView() {
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewRecordingView() {
-    AppThemeM2 {
+    AppThemeM3 {
         val state = VoiceToContentUiState(
             uiStateType = VoiceToContentUIStateType.RECORDING,
             header = HeaderUIModel(label = R.string.voice_to_content_recording_label, onClose = { }),
@@ -470,7 +469,7 @@ fun PreviewRecordingView() {
 @Preview(showBackground = true, device = Devices.PIXEL_4_XL, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewProcessingView() {
-    AppThemeM2 {
+    AppThemeM3 {
         val state = VoiceToContentUiState(
             uiStateType = VoiceToContentUIStateType.PROCESSING,
             header = HeaderUIModel(label = R.string.voice_to_content_processing_label, onClose = { })

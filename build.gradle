@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.automattic.measure.builds)
     alias(libs.plugins.kotlinx.kover)
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.violation.comments).apply(false)
     alias(libs.plugins.androidx.navigation.safeargs).apply(false)
     alias(libs.plugins.android.application).apply(false)
     alias(libs.plugins.android.library).apply(false)

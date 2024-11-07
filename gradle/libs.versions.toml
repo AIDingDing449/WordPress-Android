@@ -6,7 +6,7 @@ android-installreferrer = '2.2'
 android-security-lint = '1.0.3'
 android-volley = '1.2.1'
 androidx-activity = '1.9.3'
-androidx-annotation = '1.9.0'
+androidx-annotation = '1.9.1'
 androidx-appcompat = '1.7.0'
 androidx-arch-core = '2.2.0'
 androidx-camera = '1.4.0'
@@ -95,7 +95,6 @@ squareup-java-poet = '1.13.0'
 squareup-kotlin-poet = '1.18.1'
 squareup-okhttp3 = '4.12.0'
 squareup-retrofit = '2.11.0'
-violation-comments = '1.70.0'
 wellsql = '2.0.0'
 wiremock = '2.26.3'
 wordpress-aztec = 'v2.1.4'
@@ -281,4 +280,3 @@ kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kotlinx-kov
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 sentry = { id = "io.sentry.android.gradle", version.ref = "sentry" }
 room = { id = "androidx.room", version.ref = "androidx-room" }
-violation-comments = { id = "se.bjurr.violations.violation-comments-to-github-gradle-plugin", version.ref = "violation-comments" }
