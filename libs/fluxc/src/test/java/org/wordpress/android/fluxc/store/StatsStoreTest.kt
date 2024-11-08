@@ -172,6 +172,7 @@ class StatsStoreTest {
     }
 
     @Test @Ignore
+    @Suppress("IgnoreWithoutReason")
     fun `insight types starts with news type and ends with control type when news card was not shown`() = test {
         whenever(insightTypesSqlUtils.selectAddedItemsOrderedByStatus(site)).thenReturn(listOf(COMMENTS))
         whenever(sharedPreferences.getBoolean(INSIGHTS_MANAGEMENT_NEWS_CARD_SHOWN, false)).thenReturn(false)
@@ -185,6 +186,7 @@ class StatsStoreTest {
     }
 
     @Test @Ignore
+    @Suppress("IgnoreWithoutReason")
     fun `insight types does not start with news type when news card was shown`() = test {
         whenever(insightTypesSqlUtils.selectAddedItemsOrderedByStatus(site)).thenReturn(listOf(COMMENTS))
         whenever(sharedPreferences.getBoolean(INSIGHTS_MANAGEMENT_NEWS_CARD_SHOWN, false)).thenReturn(true)

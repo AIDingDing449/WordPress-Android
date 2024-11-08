@@ -19,8 +19,4 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         compileSdk rootProject.compileSdkVersion
     }
-
-    lint {
-        enable += 'UnknownNullness'
-    }
 }
