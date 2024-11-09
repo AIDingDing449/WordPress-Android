@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.wordpress.android.R
 import org.wordpress.android.ui.compose.components.SolidCircle
 import org.wordpress.android.ui.compose.theme.AppThemeM3WithoutBackground
 import org.wordpress.android.ui.compose.unit.Margin
@@ -40,7 +41,6 @@ import org.wordpress.android.ui.sitecreation.domains.SiteCreationDomainsViewMode
 import org.wordpress.android.ui.sitecreation.domains.SiteCreationDomainsViewModel.ListItemUiState.New.DomainUiState.Tag.Recommended
 import org.wordpress.android.ui.sitecreation.domains.SiteCreationDomainsViewModel.ListItemUiState.New.DomainUiState.Tag.Sale
 import org.wordpress.android.ui.sitecreation.domains.SiteCreationDomainsViewModel.ListItemUiState.New.DomainUiState.Tag.Unavailable
-import androidx.compose.ui.R as ComposeR
 
 private val HighlightBgColor @Composable get() = colorScheme.primary.copy(0.1f)
 private val SecondaryTextColor @Composable get() = colorScheme.onSurface.copy(0.46f)
@@ -75,7 +75,7 @@ fun DomainItem(uiState: DomainUiState): Unit = with(uiState) {
                 if (isSelected) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(ComposeR.string.selected),
+                        contentDescription = stringResource(R.string.item_selected),
                         tint = colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )
