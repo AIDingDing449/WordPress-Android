@@ -338,6 +338,7 @@ class SignupEpilogueFragment : LoginBaseFormFragment<SignupEpilogueListener?>(),
         }
     }
 
+    @Deprecated("Deprecated in Java")
     @Suppress("deprecation", "NestedBlockDepth", "LongMethod")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

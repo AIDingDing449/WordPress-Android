@@ -1,5 +1,6 @@
 import com.automattic.android.measure.reporters.InternalA8cCiReporter
 import com.automattic.android.measure.reporters.SlowSlowTasksMetricsReporter
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -13,6 +14,7 @@ plugins {
     alias(libs.plugins.google.services).apply(false)
     alias(libs.plugins.kotlin.allopen).apply(false)
     alias(libs.plugins.kotlin.android).apply(false)
+    alias(libs.plugins.kotlin.compose).apply(false)
     alias(libs.plugins.kotlin.jvm).apply(false)
     alias(libs.plugins.kotlin.parcelize).apply(false)
     alias(libs.plugins.kotlin.serialization).apply(false)
@@ -69,7 +71,7 @@ allprojects {
 
     tasks.withType(KotlinCompile).all {
         kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8
+            jvmTarget = JvmTarget.fromTarget(libs.versions.java.get()).target
             allWarningsAsErrors = true
             freeCompilerArgs += [
                     "-opt-in=kotlin.RequiresOptIn",

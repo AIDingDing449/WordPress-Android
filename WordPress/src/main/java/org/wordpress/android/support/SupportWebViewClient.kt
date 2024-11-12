@@ -24,6 +24,7 @@ class SupportWebViewClient(
     }
 
     // to support API < 21
+    @Deprecated("Deprecated in Java")
     override fun shouldInterceptRequest(
         view: WebView,
         url: String

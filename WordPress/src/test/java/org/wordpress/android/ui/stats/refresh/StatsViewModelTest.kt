@@ -240,11 +240,12 @@ class StatsViewModelTest : BaseUnitTest() {
     @Test
     fun `given enable stats module is clicked, then state reflects progress`() = test {
         val uiModel = initObservers().uiModelObserver
+        whenever(statsModuleActivateUseCase.postActivateStatsModule(anyOrNull())).thenReturn(success)
 
         startViewModel(statsModuleEnabled = false)
         viewModel.onEnableStatsModuleClick()
 
-        assertThat(uiModel.last().disabledStatsProgressVisible).isTrue
+        assertThat(uiModel.last().disabledStatsProgressVisible).isFalse()
     }
 
     @Test

@@ -5,7 +5,7 @@ import org.wordpress.android.ui.sitecreation.services.SiteCreationServiceState.S
 import org.wordpress.android.ui.sitecreation.services.SiteCreationServiceState.SiteCreationStep.SUCCESS
 import org.wordpress.android.util.AutoForeground
 
-data class SiteCreationServiceState internal constructor(
+data class SiteCreationServiceState(
     val step: SiteCreationStep,
     val payload: Any? = null
 ) : AutoForeground.ServiceState {

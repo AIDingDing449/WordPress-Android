@@ -1,6 +1,7 @@
 package org.wordpress.android.ui.blaze.blazeoverlay
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,11 +24,15 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -60,11 +65,9 @@ import org.wordpress.android.ui.blaze.PageUIModel
 import org.wordpress.android.ui.blaze.PostUIModel
 import org.wordpress.android.ui.compose.components.buttons.Button
 import org.wordpress.android.ui.compose.components.buttons.Drawable
-import org.wordpress.android.ui.compose.components.buttons.ImageButton
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
+import org.wordpress.android.ui.compose.components.buttons.ImageButtonM3
 import org.wordpress.android.ui.compose.theme.AppColor
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.unit.FontSize
 import org.wordpress.android.ui.compose.unit.Margin
 import org.wordpress.android.ui.utils.UiString
@@ -96,7 +99,7 @@ class BlazeOverlayFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View = ComposeView(requireContext()).apply {
         setContent {
-            AppThemeM2 {
+            AppThemeM3 {
                 val postModel by viewModel.promoteUiState.observeAsState(BlazeUiState.PromoteScreen.Site)
                 BlazeOverlayScreen(postModel)
             }
@@ -104,7 +107,6 @@ class BlazeOverlayFragment : Fragment() {
     }
 
     @Composable
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     fun BlazeOverlayScreen(
         content: BlazeUiState.PromoteScreen,
         isDarkTheme: Boolean = isSystemInDarkTheme()
@@ -116,16 +118,24 @@ class BlazeOverlayFragment : Fragment() {
         }
         Scaffold(
             topBar = { OverlayTopBar(blazeUIModel) },
-        ) { BlazeOverlayContent(blazeUIModel, isDarkTheme) }
+        ) { contentPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+                BlazeOverlayContent(blazeUIModel, isDarkTheme)
+            }
+        }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun OverlayTopBar(uiModel: BlazeUIModel?, modifier: Modifier = Modifier) {
         uiModel?.also {
-            MainTopAppBar(
-                title = null,
-                navigationIcon = {},
-                onNavigationIconClick = {},
+            TopAppBar(
+                title = { },
+                navigationIcon = { },
                 actions = {
                     IconButton(onClick = { viewModel.dismissOverlay() }) {
                         Icon(
@@ -140,10 +150,18 @@ class BlazeOverlayFragment : Fragment() {
                     }
                 }
             )
-        } ?: MainTopAppBar(
-            title = stringResource(R.string.blaze_activity_title),
-            navigationIcon = NavigationIcons.BackIcon,
-            onNavigationIconClick = { viewModel.dismissOverlay() }
+        } ?: TopAppBar(
+            title = {
+                Text( stringResource(R.string.blaze_activity_title) )
+            },
+            navigationIcon = {
+                IconButton(onClick = { viewModel.dismissOverlay() }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        stringResource(R.string.back)
+                    )
+                }
+            },
         )
     }
 
@@ -192,7 +210,7 @@ class BlazeOverlayFragment : Fragment() {
                 modifier = Modifier
                     .padding(top = 15.dp)
             )
-            ImageButton(
+            ImageButtonM3(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
@@ -306,7 +324,7 @@ class BlazeOverlayFragment : Fragment() {
     private fun Title(title: String, modifier: Modifier = Modifier) {
         Text(
             text = title,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
             fontSize = FontSize.Large.value,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
@@ -319,7 +337,7 @@ class BlazeOverlayFragment : Fragment() {
     private fun Url(url: String, modifier: Modifier = Modifier) {
         Text(
             text = url,
-            style = MaterialTheme.typography.body2,
+            style = MaterialTheme.typography.bodyMedium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = modifier
@@ -359,9 +377,10 @@ class BlazeOverlayFragment : Fragment() {
     }
 
     @Preview
+    @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
     private fun PreviewBlazeOverlayScreenPostFlow() {
-        AppThemeM2 {
+        AppThemeM3 {
             BlazeOverlayScreen(
                 content = BlazeUiState.PromoteScreen.PromotePost(
                     PostUIModel(
@@ -379,9 +398,10 @@ class BlazeOverlayFragment : Fragment() {
     }
 
     @Preview
+    @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
     private fun PreviewBlazeOverlayScreenSiteFlow() {
-        AppThemeM2 {
+        AppThemeM3 {
             BlazeOverlayScreen(BlazeUiState.PromoteScreen.Site)
         }
     }

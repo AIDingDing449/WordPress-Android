@@ -1,6 +1,6 @@
 package org.wordpress.android.ui.mysite.menu
 
-import androidx.compose.material.SnackbarDuration
+import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -74,7 +74,6 @@ class MenuViewModel @Inject constructor(
 
     private val _snackbar = MutableSharedFlow<SnackbarMessage>()
     val snackBar = _snackbar.asSharedFlow()
-
 
     private val _onSelectedSiteMissing = MutableLiveData<Unit>()
     val onSelectedSiteMissing = _onSelectedSiteMissing as LiveData<Unit>

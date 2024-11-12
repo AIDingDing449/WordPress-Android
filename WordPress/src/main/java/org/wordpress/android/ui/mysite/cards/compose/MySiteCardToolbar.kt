@@ -13,14 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -36,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import org.wordpress.android.R
 import org.wordpress.android.ui.compose.components.card.UnelevatedCard
 import org.wordpress.android.ui.compose.styles.DashboardCardTypography
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 
 /**
  * A toolbar for MySite cards written in Compose, that tries to match behavior and positioning of cards written in XML.
@@ -111,14 +110,14 @@ private fun CardDropDownMenu(
             Icon(
                 imageVector = Icons.Rounded.MoreVert,
                 contentDescription = stringResource(id = R.string.more),
-                tint = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
 
         DropdownMenu(
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false },
-            modifier = Modifier.background(MaterialTheme.colors.surface.copy(alpha = ContentAlpha.high))
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             contextMenuItems.map { item ->
                 when (item) {
@@ -132,7 +131,7 @@ private fun CardDropDownMenu(
                         )
                     }
 
-                    MySiteCardToolbarContextMenuItem.Divider -> Divider()
+                    MySiteCardToolbarContextMenuItem.Divider -> HorizontalDivider()
                 }
             }
         }
@@ -158,7 +157,7 @@ sealed interface MySiteCardToolbarContextMenuItem {
 )
 @Composable
 private fun MySiteCardToolbarPreview() {
-    AppThemeM2 {
+    AppThemeM3 {
         MySiteCardToolbar(
             onContextMenuClick = {},
             contextMenuItems = listOf(
@@ -191,7 +190,7 @@ private fun MySiteCardToolbarPreview() {
 )
 @Composable
 private fun MySiteCardToolbarInCardPreview() {
-    AppThemeM2 {
+    AppThemeM3 {
         UnelevatedCard(
             modifier = Modifier.padding(8.dp)
         ) {

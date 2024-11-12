@@ -232,6 +232,7 @@ class ThreatDetailsViewModelTest : BaseUnitTest() {
 
     @Test
     fun `when ok button on fix action confirmation dialog is clicked, then action buttons are disabled`() = test {
+        whenever(fixThreatsUseCase.fixThreats(any(), any())).thenReturn(FixThreatsState.Success)
         val observers = init()
 
         triggerFixThreatAction(observers)
@@ -327,6 +328,7 @@ class ThreatDetailsViewModelTest : BaseUnitTest() {
 
     @Test
     fun `when ok button on ignore action confirmation dialog is clicked, then action buttons are disabled`() = test {
+        whenever(ignoreThreatUseCase.ignoreThreat(any(), any())).thenReturn(Success)
         val observers = init()
 
         triggerIgnoreThreatAction(observers)

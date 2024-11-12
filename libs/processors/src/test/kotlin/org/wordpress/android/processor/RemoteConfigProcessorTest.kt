@@ -5,9 +5,12 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.junit.Test
 
+@OptIn(ExperimentalCompilerApi::class, UnsafeCastFunction::class)
 class RemoteConfigProcessorTest {
     @Test
     fun `given a class with features annotation, when compiling, generate expected configuration check`() {

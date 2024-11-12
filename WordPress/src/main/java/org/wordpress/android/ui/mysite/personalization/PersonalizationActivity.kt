@@ -1,6 +1,5 @@
 package org.wordpress.android.ui.mysite.personalization
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -19,15 +18,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.TabRow
-import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,10 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dagger.hilt.android.AndroidEntryPoint
 import org.wordpress.android.R
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
-import org.wordpress.android.ui.compose.components.buttons.WPSwitch
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.utils.LocaleAwareComposable
 import org.wordpress.android.ui.compose.utils.uiStringText
 import org.wordpress.android.ui.mysite.items.listitem.ListItemAction
@@ -65,7 +65,7 @@ class PersonalizationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppThemeM2 {
+            AppThemeM3 {
                 val language by viewModel.appLanguage.observeAsState("")
 
                 LocaleAwareComposable(
@@ -79,21 +79,28 @@ class PersonalizationActivity : AppCompatActivity() {
         viewModel.onSelectedSiteMissing.observe(this) { finish() }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     fun PersonalizationScreen(modifier: Modifier = Modifier) {
         Scaffold(
             topBar = {
-                MainTopAppBar(
-                    title = stringResource(id = R.string.personalization_screen_title),
-                    navigationIcon = NavigationIcons.BackIcon,
-                    onNavigationIconClick = onBackPressedDispatcher::onBackPressed,
+                TopAppBar(
+                    title = {
+                        Text(text = stringResource(id = R.string.personalization_screen_title))
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressedDispatcher::onBackPressed) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                stringResource(R.string.back)
+                            )
+                        }
+                    },
                 )
             },
-            content = {
-                TabScreen(modifier = modifier)
-            }
-        )
+        ) { innerPadding ->
+            TabScreen(modifier = modifier.then(Modifier.padding(innerPadding)))
+        }
     }
 
     @Composable
@@ -111,8 +118,8 @@ class PersonalizationActivity : AppCompatActivity() {
         Column(modifier = modifier.fillMaxWidth()) {
             TabRow(
                 selectedTabIndex = tabIndex,
-                backgroundColor = MaterialTheme.colors.surface,
-                contentColor = MaterialTheme.colors.onSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(text = { Text(stringResource(id = title).uppercase()) },
@@ -147,7 +154,7 @@ class PersonalizationActivity : AppCompatActivity() {
                         text = stringResource(id = R.string.personalization_screen_tab_cards_description),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 items(cardStateList.size) { index ->
@@ -164,7 +171,7 @@ class PersonalizationActivity : AppCompatActivity() {
                         text = stringResource(id = R.string.personalization_screen_tab_cards_footer_cards),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -192,7 +199,7 @@ class PersonalizationActivity : AppCompatActivity() {
                             text = stringResource(id = R.string.personalization_screen_tab_shortcuts_active_shortcuts),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     items(activeShortcuts.size) { index ->
@@ -215,7 +222,7 @@ class PersonalizationActivity : AppCompatActivity() {
                             ),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -262,23 +269,23 @@ fun DashboardCardStateRow(
                 Text(
                     text = stringResource(id = cardState.description),
                     fontSize = 13.sp,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Spacer(Modifier.width(8.dp))
-            WPSwitch(
+            Switch(
                 checked = cardState.enabled,
                 onCheckedChange = {
                     onCardToggled(cardState.cardType, it)
                 },
                 modifier = Modifier
-                    .weight(.1f)
+                    .weight(.1f),
             )
         }
-        Divider(
-            thickness = 0.5.dp,
+        HorizontalDivider(
             modifier = Modifier
-                .padding()
+                .padding(),
+            thickness = 0.5.dp
         )
     }
 }
@@ -302,7 +309,7 @@ fun ShortcutStateRow(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(size = 10.dp)
                 )
                 .padding(start = 12.dp, top = 12.dp, end = 16.dp, bottom = 12.dp),
@@ -317,7 +324,7 @@ fun ShortcutStateRow(
                     .size(24.dp)
                     .padding(1.dp),
                 colorFilter = if (state.disableTint) null
-                else ColorFilter.tint(MaterialTheme.colors.onSurface)
+                else ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
 
             )
             Spacer(Modifier.width(16.dp))
@@ -325,7 +332,7 @@ fun ShortcutStateRow(
                 text = uiStringText(state.label),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .padding(end = 8.dp),
             )
@@ -351,7 +358,7 @@ fun ShortcutStateRow(
 @Preview
 @Composable
 fun PersonalizationScreenPreview() {
-    AppThemeM2 {
+    AppThemeM3 {
         ShortcutStateRow(
             state = ShortcutState(
                 label = UiString.UiStringRes(R.string.media),

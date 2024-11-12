@@ -1,6 +1,5 @@
 package org.wordpress.android.ui.mysite.menu
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -23,12 +22,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.SnackbarHost
-import androidx.compose.material.Text
-import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -54,9 +58,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.wordpress.android.R
 import org.wordpress.android.ui.ActivityLauncher
 import org.wordpress.android.ui.ActivityNavigator
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
-import org.wordpress.android.ui.compose.theme.AppThemeM2
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.utils.LocaleAwareComposable
 import org.wordpress.android.ui.compose.utils.uiStringText
 import org.wordpress.android.ui.mysite.SiteNavigationAction
@@ -75,6 +77,7 @@ import org.wordpress.android.util.extensions.getParcelableExtraCompat
 import javax.inject.Inject
 
 const val KEY_QUICK_START_EVENT = "key_quick_start_event"
+
 @AndroidEntryPoint
 class MenuActivity : AppCompatActivity() {
     @Inject
@@ -92,7 +95,7 @@ class MenuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         initObservers()
         setContent {
-            AppThemeM2 {
+            AppThemeM3 {
                 val userLanguage by viewModel.refreshAppLanguage.observeAsState("")
 
                 LocaleAwareComposable(
@@ -100,13 +103,15 @@ class MenuActivity : AppCompatActivity() {
                     onLocaleChange = viewModel::setAppLanguage
                 ) {
                     viewModel.start(intent.getParcelableExtraCompat(KEY_QUICK_START_EVENT))
-                    MenuScreen()
+                    MenuScreen(
+                        onBackPressed = onBackPressedDispatcher::onBackPressed
+                    )
                 }
             }
         }
     }
 
-    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == SiteSettingsFragment.RESULT_BLOG_REMOVED) {
@@ -154,10 +159,12 @@ class MenuActivity : AppCompatActivity() {
                 this,
                 action.site
             )
+
             is SiteNavigationAction.OpenCampaignListingPage -> activityNavigator.navigateToCampaignListingPage(
                 this,
                 action.campaignListingPageSource
             )
+
             is SiteNavigationAction.OpenSiteMonitoring -> activityNavigator.navigateToSiteMonitoring(this, action.site)
             else -> {}
         }
@@ -207,31 +214,44 @@ class MenuActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
-    fun MenuScreen(modifier: Modifier = Modifier) {
-        val scaffoldState = rememberScaffoldState()
-
+    fun MenuScreen(
+        modifier: Modifier = Modifier,
+        onBackPressed: () -> Unit
+    ) {
+        val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
-            scaffoldState = scaffoldState,
-            snackbarHost = { snackbarHostState ->
-                SnackbarHost(hostState = snackbarHostState)
-            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
-                MainTopAppBar(
-                    title = stringResource(id = R.string.my_site_section_screen_title),
-                    navigationIcon = NavigationIcons.BackIcon,
-                    onNavigationIconClick = onBackPressedDispatcher::onBackPressed,
+                TopAppBar(
+                    title = {
+                        Text(text = stringResource(id = R.string.my_site_section_screen_title))
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            onBackPressed()
+                        }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                stringResource(R.string.back)
+                            )
+                        }
+                    },
                 )
-            },
-            content = {
-                MenuContent(modifier = modifier)
             }
         )
+        { contentPadding ->
+            MenuContent(modifier = modifier.then(Modifier.padding(contentPadding)))
+        }
+
         LaunchedEffect(viewModel.snackBar) {
             viewModel.snackBar.collect { message ->
-                scaffoldState.snackbarHostState.showSnackbar(
-                    message.message, message.actionLabel, message.duration)
+                snackbarHostState.showSnackbar(
+                    message = message.message,
+                    actionLabel = message.actionLabel,
+                    duration = message.duration
+                )
             }
         }
     }
@@ -250,7 +270,7 @@ class MenuActivity : AppCompatActivity() {
         ) {
             items(uiState.items) { viewState ->
                 when (viewState) {
-                    is MenuItemState.MenuListItem-> MySiteListItem(viewState)
+                    is MenuItemState.MenuListItem -> MySiteListItem(viewState)
                     is MenuItemState.MenuHeaderItem -> MySiteListItemHeader(viewState)
                     is MenuItemState.MenuEmptyHeaderItem -> MySiteListItemEmptyHeader()
                 }
@@ -265,9 +285,9 @@ fun MySiteListItemHeader(headerItem: MenuItemState.MenuHeaderItem) {
         text = uiStringText(headerItem.title),
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
-        color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
-            .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
+            .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 10.dp)
     )
 }
 
@@ -289,61 +309,64 @@ fun MySiteListItem(item: MenuItemState.MenuListItem, modifier: Modifier = Modifi
                 .fillMaxWidth()
                 .wrapContentSize()
                 .clickable { item.onClick.click() }
-                .padding(start = 12.dp, top = 6.dp, end = 16.dp, bottom = 6.dp),
+                .padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
             content = {
-            Image(
-                painter = painterResource(id = item.primaryIcon),
-                contentDescription = null, // Add appropriate content description
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .size(24.dp)
-                    .padding(1.dp),
-                colorFilter =
-                if (item.disablePrimaryIconTint) null else ColorFilter.tint(MaterialTheme.colors.onSurface)
-            )
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text = uiStringText(item.primaryText),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high),
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp),
-            )
-            Spacer(modifier = Modifier
-                .height(4.dp)
-                .weight(1f))
-
-            if (item.secondaryText != null) {
-                Text(
-                    text = uiStringText(item.secondaryText),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp, end = 8.dp),
-                )
-            }
-
-            if (item.secondaryIcon != null) {
                 Image(
-                    painter = painterResource(id = item.secondaryIcon),
+                    painter = painterResource(id = item.primaryIcon),
                     contentDescription = null, // Add appropriate content description
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .size(24.dp)
                         .padding(1.dp),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface)
+                    colorFilter =
+                    if (item.disablePrimaryIconTint) null else ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                 )
-            }
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = uiStringText(item.primaryText),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp),
+                )
+                Spacer(
+                    modifier = Modifier
+                        .height(4.dp)
+                        .weight(1f)
+                )
 
-            if (item.showFocusPoint) CustomXMLWidgetView()
-        })
+                if (item.secondaryText != null) {
+                    Text(
+                        text = uiStringText(item.secondaryText),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp, end = 8.dp),
+                    )
+                }
+
+                if (item.secondaryIcon != null) {
+                    Image(
+                        painter = painterResource(id = item.secondaryIcon),
+                        contentDescription = null, // Add appropriate content description
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(1.dp),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
+                    )
+                }
+
+                if (item.showFocusPoint) CustomXMLWidgetView()
+            })
     }
 }
+
 @Composable
 fun CustomXMLWidgetView(modifier: Modifier = Modifier) {
     // Load the custom XML widget using AndroidView
@@ -362,7 +385,7 @@ fun CustomXMLWidgetView(modifier: Modifier = Modifier) {
     }
     customView?.let { view ->
         AndroidView(
-            factory =  { view },
+            factory = { view },
             modifier = modifier.wrapContentSize(Alignment.Center)
         )
     }
@@ -381,7 +404,8 @@ fun MySiteListItemPreviewBase() {
             secondaryText = null,
             showFocusPoint = false,
             onClick = ListItemInteraction.create { onClick() },
-            listItemAction = ListItemAction.POSTS)
+            listItemAction = ListItemAction.POSTS
+        )
     )
 }
 
@@ -397,7 +421,8 @@ fun MySiteListItemPreviewWithFocusPoint() {
             secondaryText = null,
             showFocusPoint = true,
             onClick = ListItemInteraction.create { onClick() },
-            listItemAction = ListItemAction.POSTS)
+            listItemAction = ListItemAction.POSTS
+        )
     )
 }
 
@@ -413,7 +438,8 @@ fun MySiteListItemPreviewWithSecondaryText() {
             secondaryText = UiString.UiStringText("Basic"),
             showFocusPoint = false,
             onClick = ListItemInteraction.create { onClick() },
-            listItemAction = ListItemAction.PLAN)
+            listItemAction = ListItemAction.PLAN
+        )
     )
 }
 
@@ -429,6 +455,7 @@ fun MySiteListItemPreviewWithSecondaryImage() {
             secondaryText = null,
             showFocusPoint = false,
             onClick = ListItemInteraction.create { onClick() },
-            listItemAction = ListItemAction.PLAN)
+            listItemAction = ListItemAction.PLAN
+        )
     )
 }

@@ -147,6 +147,7 @@ class JetpackMigrationFragment : Fragment() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == WPPermissionUtils.NOTIFICATIONS_PERMISSION_REQUEST_CODE) {
             WPPermissionUtils.setPermissionListAsked(requireActivity(), requestCode, permissions, grantResults, false)

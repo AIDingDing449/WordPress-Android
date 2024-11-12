@@ -602,9 +602,9 @@ open class SiteStore @Inject constructor(
         }
     }
 
-    data class OnSiteDeleted(@JvmField val error: DeleteSiteError?) : OnChanged<DeleteSiteError>() {
+    data class OnSiteDeleted(@JvmField val deleteSiteError: DeleteSiteError?) : OnChanged<DeleteSiteError>() {
         init {
-            this.error = error
+            this.error = deleteSiteError
         }
     }
 

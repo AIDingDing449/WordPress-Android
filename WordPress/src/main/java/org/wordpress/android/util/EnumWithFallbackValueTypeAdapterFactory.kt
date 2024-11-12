@@ -36,8 +36,8 @@ class EnumWithFallbackValueTypeAdapterFactory : TypeAdapterFactory {
             .asSequence()
             .filter { it.type == type.rawType && it.isAnnotationPresent(FallbackValue::class.java) }
             .map { field ->
-                @Suppress("UNCHECKED_CAST")
-                type.rawType.enumConstants.single { enumValue ->
+                @Suppress("UNCHECKED_CAST", "UNNECESSARY_SAFE_CALL")
+                type?.rawType?.enumConstants?.single { enumValue ->
                     field.get(null) == enumValue
                 } as T
             }

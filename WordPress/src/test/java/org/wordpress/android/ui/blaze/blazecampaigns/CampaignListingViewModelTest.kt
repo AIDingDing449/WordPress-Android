@@ -94,8 +94,12 @@ class CampaignListingViewModelTest : BaseUnitTest() {
     }
 
     @Test
-    fun `when viewmodel start, then should track campaign listing page shown`() {
+    fun `when viewmodel start, then should track campaign listing page shown`() = runTest {
+        val campaignFetchResult: Result<NoCampaigns, List<CampaignModel>> = Result.Success(mock())
+        whenever(getCampaignListFromDbUseCase.execute(siteModel)).thenReturn(campaignFetchResult)
+
         viewModel.start(CampaignListingPageSource.DASHBOARD_CARD)
+        advanceUntilIdle()
 
         assertThat(uiStates.first() is CampaignListingUiState.Loading).isTrue
         verify(blazeFeatureUtils).trackCampaignListingPageShown(CampaignListingPageSource.DASHBOARD_CARD)
@@ -148,8 +152,8 @@ class CampaignListingViewModelTest : BaseUnitTest() {
         whenever(selectedSiteRepository.getSelectedSite()).thenReturn(siteModel)
         whenever(getCampaignListFromDbUseCase.execute(siteModel)).thenReturn(campaignFetchResult)
 
-
         viewModel.start(CampaignListingPageSource.DASHBOARD_CARD)
+        advanceUntilIdle()
         val success = uiStates.last() as CampaignListingUiState.Success
         success.itemClick.invoke(success.campaigns.first())
 
@@ -164,6 +168,7 @@ class CampaignListingViewModelTest : BaseUnitTest() {
 
 
         viewModel.start(CampaignListingPageSource.DASHBOARD_CARD)
+        advanceUntilIdle()
         val success = uiStates.last() as CampaignListingUiState.Success
         success.createCampaignClick.invoke()
 

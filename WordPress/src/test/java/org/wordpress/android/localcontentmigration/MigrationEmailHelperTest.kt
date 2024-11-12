@@ -25,6 +25,7 @@ class MigrationEmailHelperTest : BaseUnitTest() {
 
     @Test
     fun `Should call migrationComplete when notifyMigrationComplete is called`() = test {
+        whenever(jetpackMigrationStore.migrationComplete()).thenReturn(MigrationCompleteFetchedPayload.Success)
         classToTest.notifyMigrationComplete()
         verify(jetpackMigrationStore).migrationComplete()
     }

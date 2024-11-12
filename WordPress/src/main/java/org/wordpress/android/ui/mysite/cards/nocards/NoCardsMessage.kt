@@ -3,9 +3,8 @@ package org.wordpress.android.ui.mysite.cards.nocards
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +32,8 @@ fun NoCardsMessage(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp),
             text = uiStringText(uiString = model.title),
             fontSize = 22.sp,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colors.onSurface.copy(
-                alpha = ContentAlpha.high
-            ),
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -46,9 +43,7 @@ fun NoCardsMessage(
             text = uiStringText(uiString = model.message),
             fontSize = 16.sp,
             fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colors.onSurface.copy(
-                alpha = ContentAlpha.medium
-            ),
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,

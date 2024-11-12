@@ -1,10 +1,12 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id "java"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JvmTarget.fromTarget(libs.versions.java.get()).target
+    targetCompatibility = JvmTarget.fromTarget(libs.versions.java.get()).target
 }
 
 dependencies {

@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.wordpress.android.ui.compose.theme.AppColor
 
-
 @Composable
 fun DynamicCardFeatureImage(imageUrl: String, modifier: Modifier = Modifier) {
     AsyncImage(

@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme.colors
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +62,7 @@ fun CampaignListRow(campaignModel: CampaignModel, modifier: Modifier = Modifier)
                     text = uiStringText(uiString = campaignModel.title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Normal,
-                        color = colors.onSurface.copy(alpha = ContentAlpha.high)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -93,10 +91,10 @@ fun CampaignListRow(campaignModel: CampaignModel, modifier: Modifier = Modifier)
                 )
             }
         }
-        Divider(
-            thickness = 0.5.dp,
+        HorizontalDivider(
             modifier = Modifier
-                .padding()
+                .padding(),
+            thickness = 0.5.dp
         )
     }
 }
@@ -143,7 +141,7 @@ private fun CampaignStat(title: String, value: UiString, modifier: Modifier = Mo
         Text(
             text = uiStringText(uiString = value),
             style = MaterialTheme.typography.headlineSmall.copy(
-                color = colors.onSurface.copy(alpha = ContentAlpha.high),
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
             ),
             textAlign = TextAlign.Start
@@ -153,7 +151,7 @@ private fun CampaignStat(title: String, value: UiString, modifier: Modifier = Mo
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
-                color = colors.onSurface.copy(alpha = ContentAlpha.medium)
+                color = MaterialTheme.colorScheme.onSurface
             ),
             textAlign = TextAlign.Start
         )

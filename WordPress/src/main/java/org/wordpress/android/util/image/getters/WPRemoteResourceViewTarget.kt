@@ -117,6 +117,7 @@ internal class WPRemoteResourceViewTarget(
             drawable?.colorFilter = colorFilter
         }
 
+        @Deprecated("Deprecated in Java")
         @Suppress("DEPRECATION")
         override fun getOpacity(): Int {
             return drawable?.opacity ?: PixelFormat.UNKNOWN

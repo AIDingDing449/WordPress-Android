@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Text
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,10 +71,10 @@ fun BlazeCampaignsCard(
                         )
                     } else Spacer(modifier = Modifier.size(8.dp))
                 }
-                Divider(
-                    thickness = 0.5.dp,
+                HorizontalDivider(
                     modifier = Modifier
-                        .padding(start = 16.dp)
+                        .padding(start = 16.dp),
+                    thickness = 0.5.dp
                 )
                 Column(modifier = Modifier
                     .clickable { blazeCampaignCardModel.footer.onClick.click() }) {

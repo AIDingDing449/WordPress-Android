@@ -12,12 +12,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Scaffold
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -26,27 +44,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.wordpress.android.R
-import androidx.compose.ui.Alignment
 import org.wordpress.android.ui.ActivityLauncher
 import org.wordpress.android.ui.WPWebViewActivity
 import org.wordpress.android.ui.blaze.BlazeActionEvent
-import org.wordpress.android.ui.compose.components.MainTopAppBar
-import org.wordpress.android.ui.compose.components.NavigationIcons
-import org.wordpress.android.ui.compose.theme.AppThemeM2
-import org.wordpress.android.util.extensions.getSerializableCompat
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Modifier
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
+import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.utils.uiStringText
 import org.wordpress.android.ui.main.jetpack.migration.compose.state.LoadingState
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import org.wordpress.android.util.extensions.getSerializableCompat
 
 private const val CAMPAIGN_DETAIL_PAGE_SOURCE = "campaign_detail_page_source"
 private const val CAMPAIGN_DETAIL_CAMPAIGN_ID = "campaign_detail_campaign_id"
@@ -69,7 +73,7 @@ class CampaignDetailFragment : Fragment(), CampaignDetailWebViewClient.CampaignD
         savedInstanceState: Bundle?
     ): View = ComposeView(requireContext()).apply {
         setContent {
-            AppThemeM2 {
+            AppThemeM3 {
                 CampaignDetailPage(
                     navigationUp = requireActivity().onBackPressedDispatcher::onBackPressed
                 )
@@ -118,8 +122,8 @@ class CampaignDetailFragment : Fragment(), CampaignDetailWebViewClient.CampaignD
 
     override fun onWebViewReceivedError() = viewModel.onWebViewError()
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     fun CampaignDetailPage(
         navigationUp: () -> Unit = { },
         viewModel: CampaignDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
@@ -127,14 +131,29 @@ class CampaignDetailFragment : Fragment(), CampaignDetailWebViewClient.CampaignD
         val uiState by viewModel.uiState.collectAsState()
         Scaffold(
             topBar = {
-                MainTopAppBar(
-                    title = stringResource(R.string.blaze_campaign_details_page_title),
-                    navigationIcon = NavigationIcons.BackIcon,
-                    onNavigationIconClick = navigationUp
+                TopAppBar(
+                    title = {
+                        Text(text = stringResource(R.string.blaze_campaign_details_page_title))
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navigationUp() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                stringResource(R.string.back)
+                            )
+                        }
+                    },
                 )
             },
-            content = { CampaignDetailContent(uiState) }
-        )
+        ) { contentPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+                CampaignDetailContent(uiState)
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -159,12 +178,12 @@ class CampaignDetailFragment : Fragment(), CampaignDetailWebViewClient.CampaignD
         ) {
             Text(
                 text = uiStringText(uiString = error.title),
-                style = MaterialTheme.typography.h5,
+                style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
             Text(
                 text = uiStringText(uiString = error.description),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -178,7 +197,6 @@ class CampaignDetailFragment : Fragment(), CampaignDetailWebViewClient.CampaignD
             }
         }
     }
-
 
     @SuppressLint("SetJavaScriptEnabled")
     @Composable
