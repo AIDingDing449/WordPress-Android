@@ -127,7 +127,6 @@ android {
         buildConfigField "boolean", "UNIFIED_COMMENTS_DETAILS", "false"
         buildConfigField "boolean", "COMMENTS_SNIPPET", "false"
         buildConfigField "boolean", "READER_COMMENTS_MODERATION", "false"
-        buildConfigField "boolean", "SITE_INTENT_QUESTION", "true"
         buildConfigField "boolean", "SITE_NAME", "false"
         buildConfigField "boolean", "LAND_ON_THE_EDITOR", "false"
         buildConfigField "boolean", "QRCODE_AUTH_FLOW", "false"

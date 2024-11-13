@@ -22,7 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.gravatar.services.AvatarService
-import com.gravatar.services.Result
+import com.gravatar.services.GravatarResult
 import com.gravatar.types.Email
 import com.yalantis.ucrop.UCrop
 import com.yalantis.ucrop.UCrop.Options
@@ -681,15 +681,22 @@ class MeFragment : Fragment(R.layout.me_fragment), OnScrollToTopListener {
         }
         binding?.showGravatarProgressBar(true)
         lifecycleScope.launch {
-            val result =
-                avatarService.upload(file, Email(accountStore.account.email), accountStore.accessToken.orEmpty())
+            val result = avatarService.uploadCatching(
+                file = file,
+                oauthToken = accountStore.accessToken.orEmpty(),
+                hash = Email(accountStore.account.email).hash(),
+                selectAvatar = true,
+            )
             when (result) {
-                is Result.Failure -> {
-                    AnalyticsTracker.track(ME_GRAVATAR_UPLOAD_EXCEPTION, mapOf("error_type" to result.error.name))
+                is GravatarResult.Failure -> {
+                    AnalyticsTracker.track(
+                        ME_GRAVATAR_UPLOAD_EXCEPTION,
+                        mapOf("error_type" to result.error.javaClass.name)
+                    )
                     EventBus.getDefault().post(GravatarUploadFinished(filePath, false))
                 }
 
-                is Result.Success -> {
+                is GravatarResult.Success -> {
                     AnalyticsTracker.track(ME_GRAVATAR_UPLOADED)
                     EventBus.getDefault().post(GravatarUploadFinished(filePath, true))
                 }

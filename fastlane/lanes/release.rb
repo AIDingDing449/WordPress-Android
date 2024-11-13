@@ -548,19 +548,30 @@ platform :android do
   end
 
   def trigger_buildkite_release_build(branch:, beta:)
+    environment = {
+      RELEASE_VERSION: current_release_version
+    }
+
     pipeline_file = beta ? 'beta-builds.yml' : 'release-builds.yml'
     message = beta ? 'Beta Builds' : 'Release Builds'
 
-    build_url = buildkite_trigger_build(
-      buildkite_organization: 'automattic',
-      buildkite_pipeline: 'wordpress-android',
-      branch: branch,
-      pipeline_file: pipeline_file,
-      message: message
-    )
+    # If we're running on CI, we can directly start the release pipeline jobs within the same build
+    if is_ci
+      buildkite_pipeline_upload(
+        pipeline_file: pipeline_file,
+        environment: environment
+      )
+    else
+      build_url = buildkite_trigger_build(
+        buildkite_organization: 'automattic',
+        buildkite_pipeline: 'wordpress-android',
+        branch: branch,
+        pipeline_file: pipeline_file,
+        message: message
+      )
 
-    message = "This build triggered a build on <code>#{branch}</code>:<br>- #{build_url}"
-    buildkite_annotate(style: 'info', context: 'trigger-release-build', message: message) if is_ci
+      UI.success("Release build triggered on #{branch}: #{build_url}")
+    end
   end
 
   def create_backmerge_pr(source_branch: "release/#{current_release_version}", target_branch: nil)

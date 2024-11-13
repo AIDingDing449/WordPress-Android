@@ -23,8 +23,15 @@ object AvatarHelper {
         listener: AvatarRequestListener
     ) {
         val avatarSize = fragment.resources.getDimensionPixelSize(R.dimen.avatar_sz_login)
-        val avatarUrl = email?.let { AvatarUrl(Email(email),
-                AvatarQueryOptions(preferredSize = avatarSize, defaultAvatarOption = Status404)).url().toString() }
+        val avatarUrl = email?.let {
+            AvatarUrl(
+                email = Email(email),
+                avatarQueryOptions = AvatarQueryOptions {
+                    preferredSize = avatarSize
+                    defaultAvatarOption = Status404
+                }
+            ).url().toString()
+        }
         loadAvatarFromUrl(fragment, avatarUrl, avatarView, listener)
     }
 
