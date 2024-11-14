@@ -7,7 +7,6 @@ import org.wordpress.android.fluxc.store.StatsStore.PostDetailType
 import org.wordpress.android.fluxc.store.stats.PostDetailStore
 import org.wordpress.android.modules.BG_THREAD
 import org.wordpress.android.modules.UI_THREAD
-import org.wordpress.android.ui.stats.refresh.NavigationTarget.ViewDayAverageStats
 import org.wordpress.android.ui.stats.refresh.lists.BLOCK_ITEM_COUNT
 import org.wordpress.android.ui.stats.refresh.lists.VIEW_ALL_ITEM_COUNT
 import org.wordpress.android.ui.stats.refresh.lists.detail.PostDetailMapper.ExpandedYearUiState
@@ -16,12 +15,10 @@ import org.wordpress.android.ui.stats.refresh.lists.sections.BaseStatsUseCase.Us
 import org.wordpress.android.ui.stats.refresh.lists.sections.BaseStatsUseCase.UseCaseMode.VIEW_ALL
 import org.wordpress.android.ui.stats.refresh.lists.sections.BlockListItem
 import org.wordpress.android.ui.stats.refresh.lists.sections.BlockListItem.Header
-import org.wordpress.android.ui.stats.refresh.lists.sections.BlockListItem.Link
 import org.wordpress.android.ui.stats.refresh.lists.sections.BlockListItem.Title
 import org.wordpress.android.ui.stats.refresh.lists.sections.insights.InsightUseCaseFactory
 import org.wordpress.android.ui.stats.refresh.utils.StatsPostProvider
 import org.wordpress.android.ui.stats.refresh.utils.StatsSiteProvider
-import org.wordpress.android.ui.utils.ListItemInteraction
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -77,7 +74,7 @@ class PostAverageViewsPerDayUseCase(
         items.add(
             header
         )
-        val shownYears = domainModel.yearsAverage.sortedByDescending { it.year }.takeLast(itemsToLoad)
+        val shownYears = domainModel.yearsAverage.sortedByDescending { it.year }.take(itemsToLoad)
         val yearList = postDetailMapper.mapYears(
             shownYears,
             uiState,
@@ -86,23 +83,22 @@ class PostAverageViewsPerDayUseCase(
         )
 
         items.addAll(yearList)
-        if (useCaseMode == BLOCK && domainModel.yearsAverage.size > itemsToLoad) {
+
+        // We don't currently have a detail view for this
+        // https://github.com/wordpress-mobile/WordPress-Android/issues/21458
+        /*if (useCaseMode == BLOCK && domainModel.yearsAverage.size > itemsToLoad) {
             items.add(
                 Link(
                     text = R.string.stats_insights_view_more,
-                    navigateAction = ListItemInteraction.create(this::onLinkClick)
+                    navigateAction = ListItemInteraction.create(navigateTo(ViewDayAverageStats))
                 )
             )
-        }
+        }*/
         return items
     }
 
     private fun PostDetailStatsModel?.hasData(): Boolean {
         return this != null && this.yearsAverage.isNotEmpty() && this.yearsAverage.any { it.value > 0 }
-    }
-
-    private fun onLinkClick() {
-        navigateTo(ViewDayAverageStats)
     }
 
     override fun buildLoadingItem(): List<BlockListItem> {

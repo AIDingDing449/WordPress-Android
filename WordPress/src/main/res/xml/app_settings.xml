@@ -63,6 +63,23 @@
 
     </PreferenceScreen>
 
+    <PreferenceScreen
+        android:id="@+id/pref_experimental_features_settings"
+        android:key="@string/pref_key_experimental_features_settings"
+        android:title="@string/preference_experimental_features_settings">
+
+        <org.wordpress.android.ui.prefs.WPSwitchPreference
+            android:defaultValue="false"
+            android:key="@string/pref_key_experimental_block_editor"
+            android:title="@string/preference_experimental_block_editor" />
+
+        <org.wordpress.android.ui.prefs.WPSwitchPreference
+            android:defaultValue="false"
+            android:key="@string/pref_key_experimental_block_editor_theme_styles"
+            android:title="@string/preference_experimental_block_editor_theme_styles" />
+
+    </PreferenceScreen>
+
     <Preference
         android:key="@string/pref_key_device_settings"
         android:title="@string/preference_open_device_settings" />

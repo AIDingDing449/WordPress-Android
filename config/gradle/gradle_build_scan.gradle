@@ -1,6 +1,6 @@
 
 // Only run build scan on CI builds.
-if (System.getenv('CI')) {
+if (gradle.ext.isCi) {
     develocity {
         buildScan {
             termsOfUseUrl = 'https://gradle.com/terms-of-service'

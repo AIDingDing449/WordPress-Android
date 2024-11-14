@@ -97,6 +97,9 @@ public class AppSettingsFragment extends PreferenceFragment
     private WPSwitchPreference mStripImageLocation;
     private WPSwitchPreference mReportCrashPref;
     private WPSwitchPreference mOpenWebLinksWithJetpack;
+    @Nullable private PreferenceScreen mExperimentalFeaturesSettings;
+    @Nullable private WPSwitchPreference mExperimentalBlockEditorPref;
+    @Nullable private WPSwitchPreference mExperimentalBlockEditorStylesPref;
 
     private Preference mWhatsNew;
 
@@ -177,12 +180,18 @@ public class AppSettingsFragment extends PreferenceFragment
                         .getPrefAndSetChangeListener(this, R.string.pref_key_site_video_encoder_bitrate, this);
         mPrivacySettings = (PreferenceScreen) WPPrefUtils
                 .getPrefAndSetClickListener(this, R.string.pref_key_privacy_settings, this);
+        mExperimentalFeaturesSettings = (PreferenceScreen) WPPrefUtils
+                .getPrefAndSetClickListener(this, R.string.pref_key_experimental_features_settings, this);
 
         mStripImageLocation =
                 (WPSwitchPreference) WPPrefUtils
                         .getPrefAndSetChangeListener(this, R.string.pref_key_strip_image_location, this);
         mReportCrashPref = (WPSwitchPreference) WPPrefUtils
                 .getPrefAndSetChangeListener(this, R.string.pref_key_send_crash, this);
+        mExperimentalBlockEditorPref = (WPSwitchPreference) WPPrefUtils
+                .getPrefAndSetChangeListener(this, R.string.pref_key_experimental_block_editor, this);
+        mExperimentalBlockEditorStylesPref = (WPSwitchPreference) WPPrefUtils
+                .getPrefAndSetChangeListener(this, R.string.pref_key_experimental_block_editor_theme_styles, this);
 
         mOpenWebLinksWithJetpack =
                 (WPSwitchPreference) WPPrefUtils
@@ -260,6 +269,7 @@ public class AppSettingsFragment extends PreferenceFragment
     @Override public void onViewStateRestored(Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
         addPrivacyToolbar();
+        addExperimentalFeaturesToolbar();
     }
 
     private void addJetpackBadgeAsFooterIfEnabled(LayoutInflater inflater, ListView listView) {
@@ -405,6 +415,8 @@ public class AppSettingsFragment extends PreferenceFragment
             return handleDevicePreferenceClick();
         } else if (preference == mPrivacySettings) {
             return handlePrivacyClick();
+        } else if (preference == mExperimentalFeaturesSettings) {
+            return handleExperimentalFeaturesClick();
         } else if (preference == mWhatsNew) {
             return handleFeatureAnnouncementClick();
         } else if (preference == mLanguagePreference) {
@@ -472,6 +484,12 @@ public class AppSettingsFragment extends PreferenceFragment
             getActivity().recreate();
         } else if (preference == mReportCrashPref) {
             AnalyticsTracker.track(Stat.PRIVACY_SETTINGS_REPORT_CRASHES_TOGGLED, Collections
+                    .singletonMap(TRACK_ENABLED, newValue));
+        } else if (preference == mExperimentalBlockEditorPref) {
+            AnalyticsTracker.track(Stat.EXPERIMENTAL_BLOCK_EDITOR_TOGGLED, Collections
+                    .singletonMap(TRACK_ENABLED, newValue));
+        } else if (preference == mExperimentalBlockEditorStylesPref) {
+            AnalyticsTracker.track(Stat.EXPERIMENTAL_BLOCK_EDITOR_THEME_STYLES_TOGGLED, Collections
                     .singletonMap(TRACK_ENABLED, newValue));
         } else if (preference == mOpenWebLinksWithJetpack) {
             handleOpenLinksInJetpack((Boolean) newValue);
@@ -611,6 +629,32 @@ public class AppSettingsFragment extends PreferenceFragment
 
         String title = getString(R.string.preference_privacy_settings);
         Dialog dialog = mPrivacySettings.getDialog();
+        if (dialog != null) {
+            WPActivityUtils.addToolbarToDialog(this, dialog, title);
+        }
+        return true;
+    }
+
+    private boolean handleExperimentalFeaturesClick() {
+        AnalyticsTracker.track(Stat.APP_SETTINGS_EXPERIMENTAL_FEATURES_TAPPED);
+
+        boolean isToolbarAdded = addExperimentalFeaturesToolbar();
+
+        if (!isToolbarAdded) {
+            return false;
+        }
+
+        AnalyticsTracker.track(Stat.EXPERIMENTAL_FEATURES_SETTINGS_OPENED);
+        return true;
+    }
+
+    private boolean addExperimentalFeaturesToolbar() {
+        if (mExperimentalFeaturesSettings == null || !isAdded()) {
+            return false;
+        }
+
+        String title = getString(R.string.preference_experimental_features_settings);
+        Dialog dialog = mExperimentalFeaturesSettings.getDialog();
         if (dialog != null) {
             WPActivityUtils.addToolbarToDialog(this, dialog, title);
         }

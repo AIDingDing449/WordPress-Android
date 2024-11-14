@@ -39,7 +39,7 @@ measureBuilds {
                 findProperty('appsMetricsToken')
         )
     }
-    attachGradleScanId = System.getenv('CI')?.toBoolean() ?: false
+    attachGradleScanId = gradle.ext.isCi
 }
 
 allprojects {

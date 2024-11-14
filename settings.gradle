@@ -16,6 +16,8 @@ plugins {
     id "com.gradle.develocity" version "3.18.1"
 }
 
+gradle.ext.isCi = System.getenv('CI')?.toBoolean() ?: false
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

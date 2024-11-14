@@ -72,9 +72,10 @@ sentry {
         logcat.enabled = false
     }
     autoInstallation.enabled = false
-    includeSourceContext = true
-    autoUploadSourceContext = true
     includeDependenciesReport = false
+
+    includeSourceContext = gradle.ext.isCi
+    includeProguardMapping = gradle.ext.isCi
     /* Sentry won't send source context or add performance instrumentations for debug builds
     so we can save build times. Sending events will still work in debug builds
     (if enabled in WPCrashLoggingDataProvider).
@@ -196,7 +197,7 @@ android {
         targetCompatibility JvmTarget.fromTarget(libs.versions.java.get()).target
     }
 
-    flavorDimensions "app", "buildType"
+    flavorDimensions = ['app', 'buildType']
 
     productFlavors {
         wordpress {
@@ -300,7 +301,7 @@ android {
         checkGeneratedSources = true
         lintConfig file("${project.rootDir}/config/lint/lint.xml")
         baseline file("${project.rootDir}/config/lint/baseline.xml")
-        sarifReport = System.getenv('CI') ? true : false
+        sarifReport = gradle.ext.isCi
     }
 
     packagingOptions {

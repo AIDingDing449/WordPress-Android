@@ -940,6 +940,9 @@
     <string name="ccpa_privacy_notice_header">Privacy notice for California users</string>
     <string name="ccpa_privacy_notice_caption">The California Consumer Privacy Act ("CCPA") requires us to provide California residents with some additional information about the categories of personal information we collect and share, where we get that personal information, and how and why we use it.</string>
     <string name="ccpa_privacy_notice_read">Read CCPA privacy notice</string>
+    <string name="preference_experimental_features_settings">Experimental features</string>
+    <string name="preference_experimental_block_editor">Experimental block editor</string>
+    <string name="preference_experimental_block_editor_theme_styles">Experimental block editor styles</string>
     <string name="preference_strip_image_location">Remove location from media</string>
     <string name="app_theme">Appearance</string>
     <string name="app_theme_light">Light</string>
@@ -4846,7 +4849,8 @@ translators: %s: Select control option value e.g: "Auto, 25%". -->
     <string name="personalization_screen_activity_log_card_description">Recent actions taken on your site.</string>
     <string name="personalization_screen_next_steps_card_title" translatable="false">@string/quick_start_sites</string>
     <string name="personalization_screen_next_steps_card_description">Learn how to make the most of your site with the app.</string>
-    <string name="personalization_screen_shortcuts_add_or_remove_shortcut_button">Add or Remove shortcuts</string>
+    <string name="personalization_screen_card_accessibility_label">Toggle %s card</string>
+    <string name="personalization_screen_shortcuts_accessibility_label">Toggle %s shortcut</string>
 
     <string name="my_site_dashboard_no_cards_message_title">All cards are hidden</string>
     <string name="my_site_dashboard_no_cards_message_description">Tap the personalise button to show more cards.</string>

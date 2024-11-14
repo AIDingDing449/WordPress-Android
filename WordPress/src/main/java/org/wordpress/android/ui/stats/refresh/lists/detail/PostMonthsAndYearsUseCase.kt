@@ -77,7 +77,7 @@ class PostMonthsAndYearsUseCase(
         items.add(
             header
         )
-        val shownYears = domainModel.yearsTotal.sortedByDescending { it.year }.takeLast(itemsToLoad)
+        val shownYears = domainModel.yearsTotal.sortedByDescending { it.year }.take(itemsToLoad)
         val yearList = postDetailMapper.mapYears(
             shownYears,
             uiState,

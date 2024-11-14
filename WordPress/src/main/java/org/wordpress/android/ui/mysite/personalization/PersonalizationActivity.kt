@@ -6,6 +6,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -247,7 +249,19 @@ fun DashboardCardStateRow(
     onCardToggled: (cardType: CardType, enabled: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    val title = stringResource(id = cardState.title)
+    val label = stringResource(id = R.string.personalization_screen_card_accessibility_label, title)
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = label) {
+                onCardToggled(cardState.cardType, !cardState.enabled)
+            }
+            .semantics(
+                mergeDescendants = true,
+            ) { },
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -255,7 +269,7 @@ fun DashboardCardStateRow(
                     start = 16.dp,
                     end = 16.dp
                 ),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier
@@ -279,7 +293,10 @@ fun DashboardCardStateRow(
                     onCardToggled(cardState.cardType, it)
                 },
                 modifier = Modifier
-                    .weight(.1f),
+                    .clickable(onClickLabel = label) {
+                        onCardToggled(cardState.cardType, !cardState.enabled)
+                    }
+                    .weight(.1f)
             )
         }
         HorizontalDivider(
@@ -318,7 +335,7 @@ fun ShortcutStateRow(
         ) {
             Image(
                 painter = painterResource(id = state.icon),
-                contentDescription = null, // Add appropriate content description
+                contentDescription = uiStringText(state.label),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .size(24.dp)
@@ -347,7 +364,8 @@ fun ShortcutStateRow(
                     painter = painterResource(id = actionIcon),
                     tint = actionIconTint,
                     contentDescription = stringResource(
-                        R.string.personalization_screen_shortcuts_add_or_remove_shortcut_button
+                        R.string.personalization_screen_shortcuts_accessibility_label,
+                        uiStringText(state.label)
                     ),
                 )
             }
