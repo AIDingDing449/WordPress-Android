@@ -17,7 +17,8 @@ data class MediaPickerSetup(
     val editingEnabled: Boolean,
     val queueResults: Boolean,
     val defaultSearchView: Boolean,
-    @StringRes val title: Int
+    @StringRes val title: Int,
+    val initialSelection: List<Int> = emptyList()
 ) {
     enum class DataSource {
         DEVICE, WP_LIBRARY, STOCK_LIBRARY, GIF_LIBRARY
@@ -40,6 +41,7 @@ data class MediaPickerSetup(
         bundle.putBoolean(KEY_QUEUE_RESULTS, queueResults)
         bundle.putBoolean(KEY_DEFAULT_SEARCH_VIEW, defaultSearchView)
         bundle.putInt(KEY_TITLE, title)
+        bundle.putIntegerArrayList(KEY_INITIAL_SELECTION, ArrayList(initialSelection))
     }
 
     fun toIntent(intent: Intent) {
@@ -55,6 +57,7 @@ data class MediaPickerSetup(
         intent.putExtra(KEY_QUEUE_RESULTS, queueResults)
         intent.putExtra(KEY_DEFAULT_SEARCH_VIEW, defaultSearchView)
         intent.putExtra(KEY_TITLE, title)
+        intent.putIntegerArrayListExtra(KEY_INITIAL_SELECTION, ArrayList(initialSelection))
     }
 
     companion object {
@@ -70,6 +73,7 @@ data class MediaPickerSetup(
         private const val KEY_QUEUE_RESULTS = "key_queue_results"
         private const val KEY_DEFAULT_SEARCH_VIEW = "key_default_search_view"
         private const val KEY_TITLE = "key_title"
+        private const val KEY_INITIAL_SELECTION = "key_initial_selection"
 
         fun fromBundle(bundle: Bundle): MediaPickerSetup {
             val dataSource = DataSource.values()[bundle.getInt(KEY_PRIMARY_DATA_SOURCE)]
@@ -88,6 +92,7 @@ data class MediaPickerSetup(
             val queueResults = bundle.getBoolean(KEY_QUEUE_RESULTS)
             val defaultSearchView = bundle.getBoolean(KEY_DEFAULT_SEARCH_VIEW)
             val title = bundle.getInt(KEY_TITLE)
+            val initialSelection = bundle.getIntegerArrayList(KEY_INITIAL_SELECTION)?.toList() ?: emptyList()
             return MediaPickerSetup(
                 dataSource,
                 availableDataSources,
@@ -100,7 +105,8 @@ data class MediaPickerSetup(
                 editingEnabled,
                 queueResults,
                 defaultSearchView,
-                title
+                title,
+                initialSelection
             )
         }
 
@@ -122,6 +128,7 @@ data class MediaPickerSetup(
             val queueResults = intent.getBooleanExtra(KEY_QUEUE_RESULTS, false)
             val defaultSearchView = intent.getBooleanExtra(KEY_DEFAULT_SEARCH_VIEW, false)
             val title = intent.getIntExtra(KEY_TITLE, R.string.photo_picker_photo_or_video_title)
+            val initialSelection = intent.getIntegerArrayListExtra(KEY_INITIAL_SELECTION)?.toList() ?: emptyList()
             return MediaPickerSetup(
                 dataSource,
                 availableDataSources,
@@ -134,7 +141,8 @@ data class MediaPickerSetup(
                 editingEnabled,
                 queueResults,
                 defaultSearchView,
-                title
+                title,
+                initialSelection
             )
         }
     }

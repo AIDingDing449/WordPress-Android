@@ -109,6 +109,10 @@ data class MediaItem(
                     return arrayOfNulls(size)
                 }
             }
+
+            public fun fromId(id: Long): Identifier {
+                return RemoteId(id)
+            }
         }
     }
 }

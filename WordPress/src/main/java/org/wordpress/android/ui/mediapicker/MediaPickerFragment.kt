@@ -232,6 +232,10 @@ class MediaPickerFragment : Fragment(), MenuProvider {
             }
         }
 
+        if (mediaPickerSetup.initialSelection.isNotEmpty()) {
+            selectedIds = mediaPickerSetup.initialSelection.map { Identifier.fromId(it.toLong()) }
+        }
+
         val layoutManager = GridLayoutManager(
             activity,
             NUM_COLUMNS

@@ -107,6 +107,7 @@ import org.wordpress.aztec.toolbar.IAztecToolbarClickListener;
 import org.wordpress.aztec.util.AztecLog;
 import org.wordpress.aztec.watchers.EndOfBufferMarkerAdder;
 import org.wordpress.gutenberg.GutenbergView.ContentChangeListener;
+import org.wordpress.gutenberg.GutenbergView.OpenMediaLibraryListener;
 import org.xml.sax.Attributes;
 
 import java.util.ArrayList;
@@ -708,6 +709,9 @@ public class AztecEditorFragment extends EditorFragmentAbstract implements
     }
 
     @Override public void onEditorContentChanged(@Nullable ContentChangeListener listener) {
+    }
+
+    @Override public void onOpenMediaLibrary(@Nullable OpenMediaLibraryListener listener) {
     }
 
     @Override

@@ -27,16 +27,39 @@ ext {
     minSdkVersion = 26
     compileSdkVersion = 34
     targetSdkVersion = 34
+
+    secretProperties = loadSecrets(
+            logger,
+            file("${rootDir}/defaults.properties"),
+            file("${System.getProperty("user.home")}/.configure/wordpress-android/secrets/secrets.properties")
+    )
+}
+
+static def loadSecrets(Logger logger, File defaultsFile, File secretsFile) {
+    if (secretsFile.exists()) {
+        return loadPropertiesFromFile(secretsFile)
+    } else {
+        logger.warn("Secrets file not found. Using defaults.")
+        return loadPropertiesFromFile(defaultsFile)
+    }
+}
+
+static def loadPropertiesFromFile(File inputFile) {
+    def properties = new Properties()
+    inputFile.withInputStream { stream ->
+        properties.load(stream)
+    }
+    return properties
 }
 
 measureBuilds {
-    enable = findProperty('measureBuildsEnabled')?.toBoolean() ?: false
+    enable = secretProperties.get('measureBuildsEnabled')?.toBoolean() ?: false
     onBuildMetricsReadyListener { report ->
         SlowSlowTasksMetricsReporter.report(report)
         InternalA8cCiReporter.reportBlocking(
                 report,
                 "wordpress",
-                findProperty('appsMetricsToken')
+                secretProperties.get('appsMetricsToken')
         )
     }
     attachGradleScanId = gradle.ext.isCi

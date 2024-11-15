@@ -253,6 +253,7 @@ import org.wordpress.aztec.AztecExceptionHandler
 import org.wordpress.aztec.exceptions.DynamicLayoutGetBlockIndexOutOfBoundsException
 import org.wordpress.aztec.util.AztecLog
 import org.wordpress.gutenberg.GutenbergView
+import org.wordpress.gutenberg.MediaType
 import java.io.File
 import java.util.Locale
 import java.util.regex.Matcher
@@ -2470,6 +2471,18 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                                 storePostViewModel.savePostWithDelay()
                             }
                         })
+                        editorFragment?.onOpenMediaLibrary(object: GutenbergView.OpenMediaLibraryListener {
+                            override fun onOpenMediaLibrary(config: GutenbergView.OpenMediaLibraryConfig) {
+                                editorPhotoPicker?.allowMultipleSelection = config.multiple
+                                val mediaType = mapAllowedTypesToMediaBrowserType(config.allowedTypes, config.multiple)
+                                val initialSelection = when (val value = config.value) {
+                                    is GutenbergView.Value.Single -> listOf(value.value)
+                                    is GutenbergView.Value.Multiple -> value.toList()
+                                    else -> emptyList()
+                                }
+                                openMediaLibrary(mediaType, initialSelection)
+                            }
+                        })
                     } else {
                         editorFragment?.titleOrContentChanged?.observe(this@EditPostActivity) { _: Editable? ->
                             storePostViewModel.savePostWithDelay()
@@ -2493,6 +2506,15 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         }
 
         private val numPagesInEditor: Int = 4
+    }
+
+    private fun openMediaLibrary(mediaType: MediaBrowserType, initialSelection: List<Int>) {
+        mediaPickerLauncher.viewWPMediaLibraryPickerForResult(
+            activity = this,
+            site = siteModel,
+            browserType = mediaType,
+            initialSelection = initialSelection
+        )
     }
 
     private fun onXpostsSettingsCapability(isXpostsCapable: Boolean) {
@@ -4064,5 +4086,21 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         const val GROUP_ONE = 1
         const val GROUP_TWO = 2
         const val GROUP_THREE = 3
+    }
+}
+
+fun mapAllowedTypesToMediaBrowserType(allowedTypes: Array<MediaType>, multiple: Boolean): MediaBrowserType {
+    return when {
+        allowedTypes.contains(MediaType.IMAGE) && allowedTypes.contains(MediaType.VIDEO) -> {
+            if (multiple) MediaBrowserType.GUTENBERG_MEDIA_PICKER else MediaBrowserType.GUTENBERG_SINGLE_MEDIA_PICKER
+        }
+        allowedTypes.contains(MediaType.IMAGE) -> {
+            if (multiple) MediaBrowserType.GUTENBERG_IMAGE_PICKER else MediaBrowserType.GUTENBERG_SINGLE_IMAGE_PICKER
+        }
+        allowedTypes.contains(MediaType.VIDEO) -> {
+            if (multiple) MediaBrowserType.GUTENBERG_VIDEO_PICKER else MediaBrowserType.GUTENBERG_SINGLE_VIDEO_PICKER
+        }
+        allowedTypes.contains(MediaType.AUDIO) -> MediaBrowserType.GUTENBERG_SINGLE_AUDIO_FILE_PICKER
+        else -> if (multiple) MediaBrowserType.GUTENBERG_MEDIA_PICKER else MediaBrowserType.GUTENBERG_SINGLE_FILE_PICKER
     }
 }

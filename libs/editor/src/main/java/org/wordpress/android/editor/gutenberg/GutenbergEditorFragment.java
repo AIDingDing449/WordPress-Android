@@ -68,6 +68,11 @@ import org.wordpress.android.util.ToastUtils;
 import org.wordpress.android.util.helpers.MediaFile;
 import org.wordpress.android.util.helpers.MediaGallery;
 import org.wordpress.aztec.IHistoryListener;
+import org.wordpress.gutenberg.GutenbergView;
+import org.wordpress.gutenberg.GutenbergView.TitleAndContentCallback;
+import org.wordpress.gutenberg.GutenbergView.ContentChangeListener;
+import org.wordpress.gutenberg.GutenbergView.OpenMediaLibraryListener;
+import org.wordpress.gutenberg.GutenbergWebViewPool;
 import org.wordpress.mobile.ReactNativeGutenbergBridge.GutenbergBridgeJS2Parent.LogExceptionCallback;
 import org.wordpress.mobile.ReactNativeGutenbergBridge.GutenbergEmbedWebViewActivity;
 import org.wordpress.mobile.WPAndroidGlue.GutenbergJsException;
@@ -92,10 +97,6 @@ import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnLogExceptionListen
 import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnMediaLibraryButtonListener;
 import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnReattachMediaUploadQueryListener;
 import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnSetFeaturedImageListener;
-import org.wordpress.gutenberg.GutenbergView;
-import org.wordpress.gutenberg.GutenbergView.TitleAndContentCallback;
-import org.wordpress.gutenberg.GutenbergView.ContentChangeListener;
-import org.wordpress.gutenberg.GutenbergWebViewPool;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -110,6 +111,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static org.wordpress.mobile.WPAndroidGlue.Media.createRNMediaUsingMimeType;
+import static org.wordpress.gutenberg.Media.createMediaUsingMimeType;
 
 public class GutenbergEditorFragment extends EditorFragmentAbstract implements
         EditorMediaUploadListener,
@@ -157,6 +159,7 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     private LiveTextWatcher mTextWatcher = new LiveTextWatcher();
     @Nullable private ContentChangeListener mContentChangeListener = null;
+    @Nullable private OpenMediaLibraryListener mOpenMediaLibraryListener = null;
 
     // pointer (to the Gutenberg container fragment) that outlives this fragment's Android lifecycle. The retained
     //  fragment can be alive and accessible even before it gets attached to an activity.
@@ -288,6 +291,7 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
                 return null;
             });
             mGutenbergView.setContentChangeListener(mContentChangeListener);
+            mGutenbergView.setOpenMediaLibraryListener(mOpenMediaLibraryListener);
             mGutenbergView.setEditorDidBecomeAvailable(view -> {
                 mEditorFragmentListener.onEditorFragmentContentReady(new ArrayList<Object>(), false);
             });
@@ -1387,6 +1391,10 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
         mContentChangeListener = listener;
     }
 
+    public void onOpenMediaLibrary(@NonNull OpenMediaLibraryListener listener) {
+        mOpenMediaLibraryListener = listener;
+    }
+
     @Override
     public LiveData<Editable> getTitleOrContentChanged() {
         return mTextWatcher.getAfterTextChanged();
@@ -1399,16 +1407,13 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     @Override
     public void appendMediaFiles(Map<String, MediaFile> mediaList) {
-        // Disabling media sharing with the new editor until support is added.
-        if (getActivity() == null || mIsNewGutenbergEnabled) {
+        if (getActivity() == null) {
             // appendMediaFile may be called from a background thread (example: EditPostActivity.java#L2165) and
             // Activity may have already be gone.
             // Ticket: https://github.com/wordpress-mobile/WordPress-Android/issues/7386
             AppLog.d(T.MEDIA, "appendMediaFiles() called but Activity is null!");
             return;
         }
-
-        ArrayList<Media> rnMediaList = new ArrayList<>();
 
         // Get media URL of first of media first to check if it is network or local one.
         String mediaUrl = "";
@@ -1418,32 +1423,64 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
         }
 
         boolean isNetworkUrl = URLUtil.isNetworkUrl(mediaUrl);
-        if (!isNetworkUrl) {
-            for (Media media : rnMediaList) {
-                mUploadingMediaProgressMax.put(String.valueOf(media.getId()), 0f);
-            }
-        }
 
-        for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
-            int mediaId = isNetworkUrl ? Integer.valueOf(mediaEntry.getValue().getMediaId())
-                    : mediaEntry.getValue().getId();
-            String url = isNetworkUrl ? mediaEntry.getKey() : "file://" + mediaEntry.getKey();
-            MediaFile mediaFile = mediaEntry.getValue();
-            WritableNativeMap metadata = new WritableNativeMap();
-            String videoPressGuid = mediaFile.getVideoPressGuid();
-            if (videoPressGuid != null) {
-                metadata.putString("videopressGUID", videoPressGuid);
+        if (mIsNewGutenbergEnabled) {
+            // Disable upload handling until supported--e.g., media shared to the app
+            if (mGutenbergView == null || !isNetworkUrl) {
+                return;
             }
-            rnMediaList.add(createRNMediaUsingMimeType(mediaId,
-                    url,
-                    mediaFile.getMimeType(),
-                    mediaFile.getCaption(),
-                    mediaFile.getTitle(),
-                    mediaFile.getAlt(),
-                    metadata));
-        }
 
-        getGutenbergContainerFragment().appendMediaFiles(rnMediaList);
+            ArrayList<org.wordpress.gutenberg.Media> processedMediaList = new ArrayList<>();
+
+            for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
+                int mediaId = Integer.parseInt(mediaEntry.getValue().getMediaId());
+                String url = mediaEntry.getKey();
+                MediaFile mediaFile = mediaEntry.getValue();
+                Bundle metadata = new Bundle();
+                String videoPressGuid = mediaFile.getVideoPressGuid();
+                if (videoPressGuid != null) {
+                    metadata.putString("videopressGUID", videoPressGuid);
+                }
+                processedMediaList.add(createMediaUsingMimeType(mediaId,
+                        url,
+                        mediaFile.getMimeType(),
+                        mediaFile.getCaption(),
+                        mediaFile.getTitle(),
+                        mediaFile.getAlt()));
+            }
+
+            String mediaString = new Gson().toJson(processedMediaList);
+            mGutenbergView.setMediaUploadAttachment(mediaString);
+        } else {
+            ArrayList<Media> processedMediaList = new ArrayList<>();
+
+            if (!isNetworkUrl) {
+                for (Media media : processedMediaList) {
+                    mUploadingMediaProgressMax.put(String.valueOf(media.getId()), 0f);
+                }
+            }
+
+            for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
+                int mediaId = isNetworkUrl ? Integer.valueOf(mediaEntry.getValue().getMediaId())
+                        : mediaEntry.getValue().getId();
+                String url = isNetworkUrl ? mediaEntry.getKey() : "file://" + mediaEntry.getKey();
+                MediaFile mediaFile = mediaEntry.getValue();
+                WritableNativeMap metadata = new WritableNativeMap();
+                String videoPressGuid = mediaFile.getVideoPressGuid();
+                if (videoPressGuid != null) {
+                    metadata.putString("videopressGUID", videoPressGuid);
+                }
+                processedMediaList.add(createRNMediaUsingMimeType(mediaId,
+                        url,
+                        mediaFile.getMimeType(),
+                        mediaFile.getCaption(),
+                        mediaFile.getTitle(),
+                        mediaFile.getAlt(),
+                        metadata));
+            }
+
+            getGutenbergContainerFragment().appendMediaFiles(processedMediaList);
+        }
     }
 
     @Override

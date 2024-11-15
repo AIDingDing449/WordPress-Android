@@ -14,6 +14,15 @@ android {
         compileSdk rootProject.compileSdkVersion
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
+
+        // Optional: used to autofill username and password fields at login on debug build only
+        // Copy `developer.properties-example` to `developer.properties` and fill in the values
+        loadDeveloperProperties(
+                project.file("developer.properties-example"),
+                project.file("developer.properties")
+        ).each { fieldName, propertyKey ->
+            buildConfigField "String", fieldName, "\"$propertyKey\""
+        }
     }
 
     compileOptions {
@@ -24,6 +33,19 @@ android {
     buildFeatures {
         buildConfig true
     }
+}
+
+static def loadDeveloperProperties(File defaultsFile, File developerFile) {
+    File fileToLoad = developerFile.exists() ? developerFile : defaultsFile
+    return loadPropertiesFromFile(fileToLoad)
+}
+
+static def loadPropertiesFromFile(File inputFile) {
+    def properties = new Properties()
+    inputFile.withInputStream { stream ->
+        properties.load(stream)
+    }
+    return properties
 }
 
 dependencies {
@@ -60,26 +82,4 @@ dependencies {
     testImplementation libs.androidx.arch.core.testing
     testImplementation libs.robolectric
     testImplementation libs.assertj.core
-}
-
-// Add properties named "wp.xxx" to our BuildConfig
-android.buildTypes.all { buildType ->
-    Properties gradleProperties = new Properties()
-    File propertiesFile = file("gradle.properties")
-    if (propertiesFile.exists()) {
-        gradleProperties.load(new FileInputStream(propertiesFile))
-    } else {
-        // Load defaults
-        gradleProperties.load(new FileInputStream(file("gradle.properties-example")))
-    }
-    gradleProperties.any { property ->
-        if (property.key.toLowerCase().startsWith("wp.")) {
-            buildType.buildConfigField "String", property.key.replace("wp.", "").replace(".", "_").toUpperCase(),
-                    "\"${property.value}\""
-        }
-        if (property.key.toLowerCase().startsWith("wp.res.")) {
-            buildType.resValue "string", property.key.replace("wp.res.", "").replace(".", "_").toLowerCase(),
-                    "${property.value}"
-        }
-    }
 }
