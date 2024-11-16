@@ -20,14 +20,14 @@ class MeGravatarLoader @Inject constructor(
     private val resourseProvider: ResourceProvider
 ) {
     fun load(
-        newAvatarUploaded: Boolean,
+        newAvatarSelected: Boolean,
         avatarUrl: String,
         injectFilePath: String?,
         imageView: ImageView,
         imageType: ImageType,
         listener: RequestListener<Drawable>? = null
     ) {
-        if (newAvatarUploaded) {
+        if (newAvatarSelected) {
             // invalidate the specific gravatar entry from the bitmap cache. It will be updated via the injected
             // request cache.
             WordPress.getBitmapCache().removeSimilar(avatarUrl)
@@ -45,10 +45,12 @@ class MeGravatarLoader @Inject constructor(
             imageManager.loadIntoCircle(
                 imageView,
                 imageType,
-                if (newAvatarUploaded && injectFilePath != null) {
+                if (newAvatarSelected && injectFilePath != null) {
                     injectFilePath
                 } else {
-                    avatarUrl
+                    // If new avatar selected we force refresh the avatar
+                    val constructGravatarUrl = constructGravatarUrl(avatarUrl, newAvatarSelected)
+                    constructGravatarUrl
                 },
                 listener,
                 appPrefsWrapper.avatarVersion
@@ -56,8 +58,9 @@ class MeGravatarLoader @Inject constructor(
         }
     }
 
-    fun constructGravatarUrl(rawAvatarUrl: String): String {
+    fun constructGravatarUrl(rawAvatarUrl: String, forceRefresh: Boolean = false): String {
         val avatarSz = resourseProvider.getDimensionPixelSize(R.dimen.avatar_sz_extra_small)
-        return WPAvatarUtils.rewriteAvatarUrl(rawAvatarUrl, avatarSz)
+        val cacheBuster = if (forceRefresh) System.currentTimeMillis().toString() else null
+        return WPAvatarUtils.rewriteAvatarUrl(rawAvatarUrl, avatarSz, cacheBuster)
     }
 }

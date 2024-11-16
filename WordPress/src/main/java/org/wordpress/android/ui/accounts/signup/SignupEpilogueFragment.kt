@@ -30,6 +30,12 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.gravatar.AvatarQueryOptions
+import com.gravatar.AvatarUrl
+import com.gravatar.quickeditor.GravatarQuickEditor
+import com.gravatar.quickeditor.ui.editor.AuthenticationMethod
+import com.gravatar.quickeditor.ui.editor.AvatarPickerContentLayout
+import com.gravatar.quickeditor.ui.editor.GravatarQuickEditorParams
 import com.gravatar.services.AvatarService
 import com.gravatar.services.GravatarResult
 import com.gravatar.types.Email
@@ -70,6 +76,7 @@ import org.wordpress.android.util.StringUtils
 import org.wordpress.android.util.ToastUtils
 import org.wordpress.android.util.WPAvatarUtils
 import org.wordpress.android.util.WPMediaUtils
+import org.wordpress.android.util.config.GravatarQuickEditorFeatureConfig
 import org.wordpress.android.util.extensions.getColorFromAttribute
 import org.wordpress.android.util.extensions.redirectContextClickToLongPressListener
 import org.wordpress.android.util.image.ImageManager
@@ -134,6 +141,9 @@ class SignupEpilogueFragment : LoginBaseFormFragment<SignupEpilogueListener?>(),
     @Inject
     lateinit var mAvatarService: AvatarService
 
+    @Inject
+    lateinit var gravatarQuickEditorFeatureConfig: GravatarQuickEditorFeatureConfig
+
     @LayoutRes
     override fun getContentLayout(): Int {
         return 0 // no content layout; entire view is inflated in createMainView
@@ -163,7 +173,33 @@ class SignupEpilogueFragment : LoginBaseFormFragment<SignupEpilogueListener?>(),
         headerAvatarLayout.isEnabled = mIsEmailSignup
         headerAvatarLayout.setOnClickListener {
             mUnifiedLoginTracker.trackClick(UnifiedLoginTracker.Click.SELECT_AVATAR)
-            mMediaPickerLauncher.showGravatarPicker(this@SignupEpilogueFragment)
+            if (gravatarQuickEditorFeatureConfig.isEnabled()) {
+                GravatarQuickEditor.show(
+                    fragment = this,
+                    gravatarQuickEditorParams = GravatarQuickEditorParams {
+                        email = Email(mEmailAddress)
+                        avatarPickerContentLayout = AvatarPickerContentLayout.Horizontal
+                    },
+                    authenticationMethod = AuthenticationMethod.Bearer(mAccount.accessToken.orEmpty()),
+                    onAvatarSelected = {
+                        mPhotoUrl = AvatarUrl(
+                            email = Email(mEmailAddress),
+                            avatarQueryOptions = AvatarQueryOptions {
+                                preferredSize = resources.getDimensionPixelSize(R.dimen.avatar_sz_large)
+                            }
+                        ).url(cacheBuster = System.currentTimeMillis().toString()).toString()
+                        mImageManager.loadIntoCircle(
+                            mHeaderAvatar,
+                            ImageType.AVATAR_WITHOUT_BACKGROUND,
+                            mPhotoUrl
+                        )
+                        mHeaderAvatarAdd.visibility = View.GONE
+                        mIsAvatarAdded = true
+                    },
+                )
+            } else {
+                mMediaPickerLauncher.showGravatarPicker(this@SignupEpilogueFragment)
+            }
         }
         headerAvatarLayout.setOnLongClickListener {
             ToastUtils.showToast(

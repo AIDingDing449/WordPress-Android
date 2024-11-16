@@ -940,9 +940,6 @@
     <string name="ccpa_privacy_notice_header">Privacy notice for California users</string>
     <string name="ccpa_privacy_notice_caption">The California Consumer Privacy Act ("CCPA") requires us to provide California residents with some additional information about the categories of personal information we collect and share, where we get that personal information, and how and why we use it.</string>
     <string name="ccpa_privacy_notice_read">Read CCPA privacy notice</string>
-    <string name="preference_experimental_features_settings">Experimental features</string>
-    <string name="preference_experimental_block_editor">Experimental block editor</string>
-    <string name="preference_experimental_block_editor_theme_styles">Experimental block editor styles</string>
     <string name="preference_strip_image_location">Remove location from media</string>
     <string name="app_theme">Appearance</string>
     <string name="app_theme_light">Light</string>
@@ -962,8 +959,13 @@
     </string-array>
     <string name="locale_picker_current_language">Current language:</string>
 
+    <!-- Experimental Features -->
+    <string name="experimental_features_screen_title">Experimental Features</string>
+    <string name="experimental_block_editor">Experimental block editor</string>
+    <string name="experimental_block_editor_theme_styles">Experimental block editor styles</string>
+
     <!-- Debug settings -->
-    <string name="preference_open_debug_settings" translatable="false">Debug settings</string>
+    <string name="preference_open_debug_settings" translatable="false">Debug Settings</string>
     <string name="debug_settings_remote_features" translatable="false">Remote features</string>
     <string name="debug_settings_features_in_development" translatable="false">Features in development</string>
     <string name="debug_settings_remote_field_configs" translatable="false">Remote Field configs</string>
@@ -1146,8 +1148,7 @@
     <string name="feedback_form_attachment_already_added">Attachment already added</string>
     <string name="feedback_form_unable_to_create_tempfile">Unable to create temporary file</string>
     <string name="feedback_form_add_attachments">Add attachments</string>
-    <string name="feedback_form_note">If you need support, please get in touch using the \"Help &amp; Support\" screen</string>
-    <string name="support_warn_if_user_a8c">Automattic email accounts can\'t submit or view support tickets</string>
+    <string name="feedback_form_note">If you need support, please get in touch using the \"Contact Support\" screen</string>
     <string name="media_pager_remove_item_content_description">Remove item %1$d</string>
 
     <!-- activity log -->
@@ -2581,6 +2582,7 @@
     <!--Me-->
     <string name="me_profile_photo">Profile Photo</string>
     <string name="me_btn_app_settings">App Settings</string>
+    <string name="me_btn_experimental_features">Experimental Features</string>
     <string name="me_btn_help_and_support">Help &amp; Support</string>
     <string name="me_btn_share">Share WordPress with a friend</string>
     <string name="me_btn_about">About WordPress</string>

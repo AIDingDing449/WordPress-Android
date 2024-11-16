@@ -136,7 +136,7 @@ private fun Loaded(uiState: UiState.Loaded) {
 
                 Column(
                     modifier = Modifier
-                        .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                        .animateItem()
                         .fillMaxWidth()
                         .padding(
                             top = Margin.Large.value,

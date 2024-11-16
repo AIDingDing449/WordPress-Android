@@ -198,6 +198,25 @@
             <View style="@style/MeListSectionDividerView" />
 
             <LinearLayout
+                android:id="@+id/row_experimental_features_settings"
+                style="@style/MeListRowLayout">
+
+                <ImageView
+                    android:id="@+id/me_experimental_features_icon"
+                    style="@style/MeListRowIcon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_science_24" />
+
+                <org.wordpress.android.widgets.WPTextView
+                    android:id="@+id/me_open_experimental_features"
+                    style="@style/MeListRowTextView"
+                    android:text="@string/experimental_features_screen_title" />
+
+            </LinearLayout>
+
+            <View style="@style/MeListSectionDividerView" />
+
+            <LinearLayout
                 android:id="@+id/row_debug_settings"
                 android:visibility="gone"
                 style="@style/MeListRowLayout"
