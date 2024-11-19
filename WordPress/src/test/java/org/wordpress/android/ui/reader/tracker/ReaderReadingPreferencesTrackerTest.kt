@@ -49,13 +49,6 @@ class ReaderReadingPreferencesTrackerTest {
     }
 
     @Test
-    fun `when trackFeedbackTapped is called, then track event`() {
-        tracker.trackFeedbackTapped()
-
-        verify(analyticsTrackerWrapper).track(Stat.READER_READING_PREFERENCES_FEEDBACK_TAPPED)
-    }
-
-    @Test
     fun `when trackItemTapped is called with theme, then track event`() {
         ReaderReadingPreferences.Theme.values().forEach { theme ->
             tracker.trackItemTapped(theme)

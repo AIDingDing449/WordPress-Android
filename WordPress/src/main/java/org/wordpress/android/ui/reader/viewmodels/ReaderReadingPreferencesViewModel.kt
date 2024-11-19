@@ -12,7 +12,6 @@ import org.wordpress.android.ui.reader.models.ReaderReadingPreferences
 import org.wordpress.android.ui.reader.tracker.ReaderReadingPreferencesTracker
 import org.wordpress.android.ui.reader.usecases.ReaderGetReadingPreferencesSyncUseCase
 import org.wordpress.android.ui.reader.usecases.ReaderSaveReadingPreferencesUseCase
-import org.wordpress.android.util.config.ReaderReadingPreferencesFeedbackFeatureConfig
 import org.wordpress.android.viewmodel.ScopedViewModel
 import javax.inject.Inject
 import javax.inject.Named
@@ -21,7 +20,6 @@ import javax.inject.Named
 class ReaderReadingPreferencesViewModel @Inject constructor(
     getReadingPreferences: ReaderGetReadingPreferencesSyncUseCase,
     private val saveReadingPreferences: ReaderSaveReadingPreferencesUseCase,
-    private val readingPreferencesFeedbackFeatureConfig: ReaderReadingPreferencesFeedbackFeatureConfig,
     private val readingPreferencesTracker: ReaderReadingPreferencesTracker,
     @Named(BG_THREAD) private val bgDispatcher: CoroutineDispatcher,
 ) : ScopedViewModel(bgDispatcher) {
@@ -29,15 +27,11 @@ class ReaderReadingPreferencesViewModel @Inject constructor(
     private val _currentReadingPreferences = MutableStateFlow(originalReadingPreferences)
     val currentReadingPreferences: StateFlow<ReaderReadingPreferences> = _currentReadingPreferences
 
-    private val _isFeedbackEnabled = MutableStateFlow(false)
-    val isFeedbackEnabled: StateFlow<Boolean> = _isFeedbackEnabled
-
     private val _actionEvents = MutableSharedFlow<ActionEvent>()
     val actionEvents: SharedFlow<ActionEvent> = _actionEvents
 
     fun init() {
         launch {
-            _isFeedbackEnabled.emit(readingPreferencesFeedbackFeatureConfig.isEnabled())
             _actionEvents.emit(ActionEvent.UpdateStatusBarColor(originalReadingPreferences.theme))
         }
     }
@@ -92,13 +86,6 @@ class ReaderReadingPreferencesViewModel @Inject constructor(
         }
     }
 
-    fun onSendFeedbackClick() {
-        launch {
-            readingPreferencesTracker.trackFeedbackTapped()
-            _actionEvents.emit(ActionEvent.OpenWebView(FEEDBACK_URL))
-        }
-    }
-
     private suspend fun saveReadingPreferencesInternal() {
         val currentPreferences = currentReadingPreferences.value
         if (isDirty()) {
@@ -114,9 +101,5 @@ class ReaderReadingPreferencesViewModel @Inject constructor(
         data object UpdatePostDetails : ActionEvent
         data class UpdateStatusBarColor(val theme: ReaderReadingPreferences.Theme) : ActionEvent
         data class OpenWebView(val url: String) : ActionEvent
-    }
-
-    companion object {
-        private const val FEEDBACK_URL = "https://automattic.survey.fm/reader-customization-survey"
     }
 }

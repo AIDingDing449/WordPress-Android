@@ -34,15 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import org.wordpress.android.R
@@ -63,19 +57,15 @@ private const val TEXT_LINE_HEIGHT_MULTIPLIER = 1.6f
 fun ReadingPreferencesScreen(
     currentReadingPreferences: ReaderReadingPreferences,
     onCloseClick: () -> Unit,
-    onSendFeedbackClick: () -> Unit,
     onThemeClick: (ReaderReadingPreferences.Theme) -> Unit,
     onFontFamilyClick: (ReaderReadingPreferences.FontFamily) -> Unit,
     onFontSizeClick: (ReaderReadingPreferences.FontSize) -> Unit,
     onBackgroundColorUpdate: (Int) -> Unit,
-    isFeedbackEnabled: Boolean,
-    isHapticsFeedbackEnabled: Boolean = true,
 ) {
     val themeValues = ReaderReadingPreferences.ThemeValues.from(LocalContext.current, currentReadingPreferences.theme)
     val backgroundColor by animateColorAsState(Color(themeValues.intBackgroundColor), label = "backgroundColor")
     val baseTextColor by animateColorAsState(Color(themeValues.intBaseTextColor), label = "baseTextColor")
     val textColor by animateColorAsState(Color(themeValues.intTextColor), label = "textColor")
-    val linkColor by animateColorAsState(Color(themeValues.intLinkColor), label = "linkColor")
 
     SideEffect {
         // update background color based on value animation and notify the parent
@@ -87,7 +77,7 @@ fun ReadingPreferencesScreen(
     val fontSize = currentReadingPreferences.fontSize.toSp()
     val fontSizeMultiplier = currentReadingPreferences.fontSize.multiplier
 
-    val haptics = LocalHapticFeedback.current.takeIf { isHapticsFeedbackEnabled }
+    val haptics = LocalHapticFeedback.current
 
     Column(
         modifier = Modifier
@@ -145,14 +135,6 @@ fun ReadingPreferencesScreen(
                 style = contentStyle,
             )
 
-            if (isFeedbackEnabled) {
-                ReadingPreferencesPreviewFeedback(
-                    onSendFeedbackClick = onSendFeedbackClick,
-                    textStyle = contentStyle,
-                    linkColor = linkColor,
-                )
-            }
-
             // Tags
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -195,7 +177,7 @@ fun ReadingPreferencesScreen(
                         theme = theme,
                         isSelected = theme == currentReadingPreferences.theme,
                         onClick = {
-                            haptics?.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             onThemeClick(theme)
                         },
                     )
@@ -218,7 +200,7 @@ fun ReadingPreferencesScreen(
                         fontFamily = fontFamily,
                         isSelected = fontFamily == currentReadingPreferences.fontFamily,
                         onClick = {
-                            haptics?.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             onFontFamilyClick(fontFamily)
                         },
                     )
@@ -235,7 +217,7 @@ fun ReadingPreferencesScreen(
                 previewFontFamily = fontFamily,
                 selectedFontSize = currentReadingPreferences.fontSize,
                 onFontSizeSelected = {
-                    haptics?.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     onFontSizeClick(it)
                 },
             )
@@ -260,55 +242,6 @@ private fun ExperimentalBadge(
     )
 }
 
-@Composable
-private fun ReadingPreferencesPreviewFeedback(
-    onSendFeedbackClick: () -> Unit,
-    textStyle: TextStyle,
-    linkColor: Color,
-) {
-    val linkString = stringResource(R.string.reader_preferences_screen_preview_text_feedback_link)
-    val feedbackString = stringResource(R.string.reader_preferences_screen_preview_text_feedback, linkString)
-    val annotatedString = buildAnnotatedString {
-        append(feedbackString)
-
-        val startIndex = feedbackString.indexOf(linkString)
-        val endIndex = startIndex + linkString.length
-
-        addStyle(
-            style = SpanStyle(
-                color = linkColor,
-                textDecoration = TextDecoration.Underline,
-            ),
-            start = startIndex,
-            end = endIndex,
-        )
-
-        addLink(
-            clickable = LinkAnnotation.Clickable(
-                tag = "url",
-                linkInteractionListener = {
-                    onSendFeedbackClick()
-                }
-            ),
-            start = startIndex,
-            end = endIndex,
-        )
-    }
-
-    val buttonLabel = stringResource(R.string.reader_preferences_screen_preview_text_feedback_label)
-    Text(
-        text = annotatedString,
-        style = textStyle,
-        modifier = Modifier.semantics {
-            onClick(
-                label = buttonLabel,
-            ) {
-                onSendFeedbackClick()
-                true
-            }
-        },
-    )
-}
 
 private fun getTitleTextStyle(
     fontFamily: FontFamily,
@@ -335,11 +268,9 @@ private fun ReadingPreferencesScreenPreview() {
         ReadingPreferencesScreen(
             currentReadingPreferences = readingPreferences,
             onCloseClick = {},
-            onSendFeedbackClick = {},
             onThemeClick = { readingPreferences = readingPreferences.copy(theme = it) },
             onFontFamilyClick = { readingPreferences = readingPreferences.copy(fontFamily = it) },
             onFontSizeClick = { readingPreferences = readingPreferences.copy(fontSize = it) },
-            isFeedbackEnabled = true,
             onBackgroundColorUpdate = {},
         )
     }

@@ -18,10 +18,6 @@ class ReaderReadingPreferencesTracker @Inject constructor(
         analyticsTrackerWrapper.track(AnalyticsTracker.Stat.READER_READING_PREFERENCES_CLOSED)
     }
 
-    fun trackFeedbackTapped() {
-        analyticsTrackerWrapper.track(AnalyticsTracker.Stat.READER_READING_PREFERENCES_FEEDBACK_TAPPED)
-    }
-
     fun trackItemTapped(theme: ReaderReadingPreferences.Theme) {
         val props = mapOf(
             PROP_TYPE_KEY to PROP_TYPE_THEME,

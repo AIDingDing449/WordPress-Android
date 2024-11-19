@@ -60,16 +60,13 @@ class ReaderReadingPreferencesDialogFragment : BottomSheetDialogFragment() {
         setContent {
             AppThemeM3 {
                 val readerPreferences by viewModel.currentReadingPreferences.collectAsState()
-                val isFeedbackEnabled by viewModel.isFeedbackEnabled.collectAsState()
                 ReadingPreferencesScreen(
                     currentReadingPreferences = readerPreferences,
                     onCloseClick = viewModel::onExitActionClick,
-                    onSendFeedbackClick = viewModel::onSendFeedbackClick,
                     onThemeClick = viewModel::onThemeClick,
                     onFontFamilyClick = viewModel::onFontFamilyClick,
                     onFontSizeClick = viewModel::onFontSizeClick,
                     onBackgroundColorUpdate = { dialog?.window?.setWindowStatusBarColor(it) },
-                    isFeedbackEnabled = isFeedbackEnabled,
                 )
             }
         }
