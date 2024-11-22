@@ -31,6 +31,8 @@ class ActivityCardViewHolder(
     private fun MySiteCardToolbarBinding.update(card: ActivityCard.ActivityCardWithItems) {
         uiHelpers.setTextOrHide(mySiteCardToolbarTitle, card.title)
         mySiteCardToolbarMore.visibility = View.VISIBLE
+        mySiteCardToolbarMore.contentDescription =
+            itemView.context.getString(R.string.more_content_description_recent_activity)
         mySiteCardToolbarMore.setOnClickListener {
             showMoreMenu(
                 card.onHideMenuItemClick,

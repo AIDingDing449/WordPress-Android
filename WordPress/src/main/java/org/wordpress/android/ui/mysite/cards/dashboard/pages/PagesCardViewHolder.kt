@@ -38,6 +38,7 @@ class PagesCardViewHolder(
     private fun MySiteCardToolbarBinding.update(card: PagesCardWithData) {
         uiHelpers.setTextOrHide(mySiteCardToolbarTitle, card.title)
         mySiteCardToolbarMore.visibility = View.VISIBLE
+        mySiteCardToolbarMore.contentDescription = itemView.context.getString(R.string.more_content_description_pages)
         mySiteCardToolbarMore.setOnClickListener {
             showMoreMenu(
                 card.moreMenuOptionsLink.onMoreClick,

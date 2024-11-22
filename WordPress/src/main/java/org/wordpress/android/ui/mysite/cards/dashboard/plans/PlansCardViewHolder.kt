@@ -20,6 +20,7 @@ class PlansCardViewHolder(
     fun bind(card: DashboardPlansCard) = with(binding) {
         uiHelpers.setTextOrHide(dashboardCardPlansTitle, card.title)
         dashboardCardPlansCta.setOnClickListener { card.onClick.click() }
+        dashboardPlansCardMore.contentDescription = itemView.context.getString(R.string.more_content_description_plans)
         dashboardPlansCardMore.setOnClickListener {
             showMoreMenu(
                 card.onHideMenuItemClick,

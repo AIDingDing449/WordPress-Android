@@ -2495,6 +2495,16 @@
 
     <string name="jetpack_feature_card_more_menu_item_hide_this" translatable="false">@string/my_site_dashboard_card_more_menu_hide_card</string>
 
+    <!-- My Site - More menu button content descriptions -->
+    <string name="more_content_description_promote_blaze">Blaze more</string>
+    <string name="more_content_description_blogging_prompts">Prompts more</string>
+    <string name="more_content_description_today_stats">Today\'s stats more</string>
+    <string name="more_content_description_quick_start">Quick start more</string>
+    <string name="more_content_description_posts">Posts more</string>
+    <string name="more_content_description_pages">Pages more</string>
+    <string name="more_content_description_recent_activity">Recent activity more</string>
+    <string name="more_content_description_plans">Plans more</string>
+
     <!-- My Site - Dashboard -->
     <string name="my_site_dashboard_card_more_menu_hide_card">Hide this</string>
 

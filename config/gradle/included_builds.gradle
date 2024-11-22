@@ -48,7 +48,7 @@ if (localBuilds.exists()) {
 
     if (ext.has("localGutenbergKitPath")) {
         gradle.ext.includedBuildGutenbergKitPath = ext.localGutenbergKitPath
-        includeBuild("$ext.localGutenbergKitPath/Demo-Android") {
+        includeBuild("$ext.localGutenbergKitPath/android") {
             dependencySubstitution {
                 println "Substituting GutenbergKit with the local build"
                 substitute module("$gradle.ext.gutenbergKitBinaryPath") using project(':Gutenberg')

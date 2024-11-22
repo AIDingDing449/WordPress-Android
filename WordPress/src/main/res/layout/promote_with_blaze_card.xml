@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
-                android:contentDescription="@string/content_description_more"
+                android:contentDescription="@string/more_content_description_promote_blaze"
                 android:focusable="true"
                 android:src="@drawable/ic_more_vert_white_24dp"
                 app:layout_constraintEnd_toEndOf="parent"

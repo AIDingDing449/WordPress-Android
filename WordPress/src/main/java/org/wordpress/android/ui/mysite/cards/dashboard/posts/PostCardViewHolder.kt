@@ -39,6 +39,8 @@ sealed class PostCardViewHolder<T : ViewBinding>(
         private fun MySiteCardToolbarBinding.update(card: PostCardWithPostItems) {
             uiHelpers.setTextOrHide(mySiteCardToolbarTitle, card.title)
             mySiteCardToolbarMore.visibility = View.VISIBLE
+            mySiteCardToolbarMore.contentDescription =
+                itemView.context.getString(R.string.more_content_description_posts)
             mySiteCardToolbarMore.setOnClickListener {
                 showMoreMenu(card)
             }

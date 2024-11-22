@@ -72,6 +72,8 @@ class TodaysStatsCardViewHolder(
     private fun MySiteCardToolbarBinding.update(card: TodaysStatsCardWithData) {
         uiHelpers.setTextOrHide(mySiteCardToolbarTitle, card.title)
         mySiteCardToolbarMore.visibility = View.VISIBLE
+        mySiteCardToolbarMore.contentDescription =
+            mySiteCardToolbarTitle.context.getString(R.string.more_content_description_today_stats)
         mySiteCardToolbarMore.setOnClickListener {
             showMoreMenu(
                 card.moreMenuOptions.onMoreMenuClick,

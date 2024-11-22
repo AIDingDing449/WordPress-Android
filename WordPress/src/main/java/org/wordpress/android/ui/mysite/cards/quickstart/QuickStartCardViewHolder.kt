@@ -51,6 +51,8 @@ class QuickStartCardViewHolder(
         mySiteCardToolbar.visibility = View.VISIBLE
         mySiteCardToolbarTitle.text = uiHelpers.getTextOfUiString(itemView.context, card.title)
         mySiteCardToolbarMore.visibility = View.VISIBLE
+        mySiteCardToolbarMore.contentDescription =
+            itemView.context.getString(R.string.more_content_description_quick_start)
         mySiteCardToolbarMore.setOnClickListener {
             showQuickStartCardMenu(
                 card.moreMenuOptions,
