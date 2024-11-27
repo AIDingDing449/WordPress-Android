@@ -2,11 +2,9 @@ package org.wordpress.android.editor.gutenberg;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -20,7 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.URLUtil;
-import android.webkit.ValueCallback;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -68,11 +65,8 @@ import org.wordpress.android.util.ToastUtils;
 import org.wordpress.android.util.helpers.MediaFile;
 import org.wordpress.android.util.helpers.MediaGallery;
 import org.wordpress.aztec.IHistoryListener;
-import org.wordpress.gutenberg.GutenbergView;
-import org.wordpress.gutenberg.GutenbergView.TitleAndContentCallback;
 import org.wordpress.gutenberg.GutenbergView.ContentChangeListener;
 import org.wordpress.gutenberg.GutenbergView.OpenMediaLibraryListener;
-import org.wordpress.gutenberg.GutenbergWebViewPool;
 import org.wordpress.mobile.ReactNativeGutenbergBridge.GutenbergBridgeJS2Parent.LogExceptionCallback;
 import org.wordpress.mobile.ReactNativeGutenbergBridge.GutenbergEmbedWebViewActivity;
 import org.wordpress.mobile.WPAndroidGlue.GutenbergJsException;
@@ -98,7 +92,6 @@ import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnMediaLibraryButton
 import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnReattachMediaUploadQueryListener;
 import org.wordpress.mobile.WPAndroidGlue.WPAndroidGlueCode.OnSetFeaturedImageListener;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -107,11 +100,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static org.wordpress.mobile.WPAndroidGlue.Media.createRNMediaUsingMimeType;
-import static org.wordpress.gutenberg.Media.createMediaUsingMimeType;
 
 public class GutenbergEditorFragment extends EditorFragmentAbstract implements
         EditorMediaUploadListener,
@@ -120,7 +111,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
         GutenbergDialogPositiveClickInterface,
         GutenbergDialogNegativeClickInterface,
         GutenbergNetworkConnectionListener {
-    @Nullable private GutenbergView mGutenbergView;
     private static final String GUTENBERG_EDITOR_NAME = "gutenberg";
     private static final String KEY_HTML_MODE_ENABLED = "KEY_HTML_MODE_ENABLED";
     private static final String KEY_EDITOR_DID_MOUNT = "KEY_EDITOR_DID_MOUNT";
@@ -131,8 +121,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     public static final String ARG_FAILED_MEDIAS = "arg_failed_medias";
     public static final String ARG_FEATURED_IMAGE_ID = "featured_image_id";
     public static final String ARG_JETPACK_FEATURES_ENABLED = "jetpack_features_enabled";
-    public static final String ARG_IS_NEW_GUTENBERG_ENABLED = "new_gutenberg";
-    public static final String ARG_NEW_GUTENBERG_SETTINGS = "new_gutenberg_settings";
 
     private static final int CAPTURE_PHOTO_PERMISSION_REQUEST_CODE = 101;
     private static final int CAPTURE_VIDEO_PERMISSION_REQUEST_CODE = 102;
@@ -158,8 +146,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     private Runnable mInvalidateOptionsRunnable;
 
     private LiveTextWatcher mTextWatcher = new LiveTextWatcher();
-    @Nullable private ContentChangeListener mContentChangeListener = null;
-    @Nullable private OpenMediaLibraryListener mOpenMediaLibraryListener = null;
 
     // pointer (to the Gutenberg container fragment) that outlives this fragment's Android lifecycle. The retained
     //  fragment can be alive and accessible even before it gets attached to an activity.
@@ -172,7 +158,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     private boolean mIsNewPost;
     private boolean mIsJetpackSsoEnabled;
-    private static boolean mIsNewGutenbergEnabled;
 
     private boolean mEditorDidMount;
     private GutenbergPropsBuilder mCurrentGutenbergPropsBuilder;
@@ -183,25 +168,18 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     private String mUpdatedStoryBlockContent = null;
 
     private ProgressDialog mSavingContentProgressDialog;
-    @Nullable private static Map<String, Object> mSettings;
 
     public static GutenbergEditorFragment newInstance(Context context,
                                                       boolean isNewPost,
                                                       GutenbergWebViewAuthorizationData webViewAuthorizationData,
                                                       GutenbergPropsBuilder gutenbergPropsBuilder,
-                                                      boolean jetpackFeaturesEnabled,
-                                                      boolean newGutenbergEnabled,
-                                                      @Nullable Map<String, Object> settings) {
+                                                      boolean jetpackFeaturesEnabled) {
         GutenbergEditorFragment fragment = new GutenbergEditorFragment();
         Bundle args = new Bundle();
         args.putBoolean(ARG_IS_NEW_POST, isNewPost);
         args.putBoolean(ARG_JETPACK_FEATURES_ENABLED, jetpackFeaturesEnabled);
-        args.putBoolean(ARG_IS_NEW_GUTENBERG_ENABLED, newGutenbergEnabled);
-        args.putSerializable(ARG_NEW_GUTENBERG_SETTINGS, (Serializable) settings);
         fragment.setArguments(args);
         SavedInstanceDatabase db = SavedInstanceDatabase.Companion.getDatabase(context);
-        mIsNewGutenbergEnabled = newGutenbergEnabled;
-        mSettings = settings;
         if (db != null) {
             db.addParcel(ARG_GUTENBERG_WEB_VIEW_AUTH_DATA, webViewAuthorizationData);
             db.addParcel(ARG_GUTENBERG_PROPS_BUILDER, gutenbergPropsBuilder);
@@ -210,10 +188,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     }
 
     private GutenbergContainerFragment getGutenbergContainerFragment() {
-        if (mIsNewGutenbergEnabled) {
-            return mRetainedGutenbergContainerFragment;
-        }
-
         if (mRetainedGutenbergContainerFragment == null) {
             mRetainedGutenbergContainerFragment = (GutenbergContainerFragment) getChildFragmentManager()
                     .findFragmentByTag(GutenbergContainerFragment.TAG);
@@ -230,10 +204,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments() != null) {
-            mIsNewGutenbergEnabled = getArguments().getBoolean(ARG_IS_NEW_GUTENBERG_ENABLED);
-        }
-
         if (getGutenbergContainerFragment() == null) {
             GutenbergPropsBuilder gutenbergPropsBuilder = null;
             SavedInstanceDatabase db = SavedInstanceDatabase.Companion.getDatabase(getContext());
@@ -242,18 +212,16 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
             }
             mCurrentGutenbergPropsBuilder = gutenbergPropsBuilder;
 
-            if (!mIsNewGutenbergEnabled) {
-                FragmentManager fragmentManager = getChildFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                GutenbergContainerFragment fragment =
-                        GutenbergContainerFragment.newInstance(requireContext(), gutenbergPropsBuilder);
-                fragment.setRetainInstance(true);
-                fragmentTransaction.add(fragment, GutenbergContainerFragment.TAG);
-                fragmentTransaction.commitNow();
-            }
+            FragmentManager fragmentManager = getChildFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            GutenbergContainerFragment fragment =
+                    GutenbergContainerFragment.newInstance(requireContext(), gutenbergPropsBuilder);
+            fragment.setRetainInstance(true);
+            fragmentTransaction.add(fragment, GutenbergContainerFragment.TAG);
+            fragmentTransaction.commitNow();
         }
 
-        if (mUpdateCapabilitiesOnCreate && !mIsNewGutenbergEnabled) {
+        if (mUpdateCapabilitiesOnCreate) {
             getGutenbergContainerFragment().updateCapabilities(mCurrentGutenbergPropsBuilder);
         }
 
@@ -267,7 +235,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
                     ARG_STORY_BLOCK_EXTERNALLY_EDITED_ORIGINAL_HASH);
             mFailedMediaIds = (HashSet<String>) savedInstanceState.getSerializable(ARG_FAILED_MEDIAS);
             mFeaturedImageId = savedInstanceState.getLong(ARG_FEATURED_IMAGE_ID);
-            mIsNewGutenbergEnabled = savedInstanceState.getBoolean(ARG_IS_NEW_GUTENBERG_ENABLED);
         }
     }
 
@@ -276,43 +243,8 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         if (getArguments() != null) {
             mIsNewPost = getArguments().getBoolean(ARG_IS_NEW_POST);
-            mIsNewGutenbergEnabled = getArguments().getBoolean(ARG_IS_NEW_GUTENBERG_ENABLED);
-            mSettings = (Map<String, Object>) getArguments().getSerializable(ARG_NEW_GUTENBERG_SETTINGS);
         }
 
-        if (mIsNewGutenbergEnabled) {
-            mGutenbergView = GutenbergWebViewPool.getPreloadedWebView(requireContext());
-            mGutenbergView.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-            ));
-            mGutenbergView.setOnFileChooserRequestedListener((intent, requestCode) -> {
-                startActivityForResult(intent, requestCode);
-                return null;
-            });
-            mGutenbergView.setContentChangeListener(mContentChangeListener);
-            mGutenbergView.setOpenMediaLibraryListener(mOpenMediaLibraryListener);
-            mGutenbergView.setEditorDidBecomeAvailable(view -> {
-                mEditorFragmentListener.onEditorFragmentContentReady(new ArrayList<Object>(), false);
-            });
-
-            Integer postId = (Integer) mSettings.get("postId");
-            if (postId != null && postId == 0) {
-                postId = -1;
-            }
-            mGutenbergView.start(
-                    (String) mSettings.get("siteApiRoot"),
-                    (String) mSettings.get("siteApiNamespace"),
-                    (String) mSettings.get("authHeader"),
-                    (Boolean) mSettings.get("themeStyles"),
-                    postId,
-                    (String) mSettings.get("postType"),
-                    (String) mSettings.get("postTitle"),
-                    (String) mSettings.get("postContent")
-            );
-
-            return mGutenbergView;
-        }
         View view = inflater.inflate(R.layout.fragment_gutenberg_editor, container, false);
 
         initializeSavingProgressDialog();
@@ -745,33 +677,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (mIsNewGutenbergEnabled) {
-            if (requestCode == mGutenbergView.getPickImageRequestCode()) {
-                ValueCallback<Uri[]> filePathCallback = mGutenbergView.getFilePathCallback();
-
-                if (filePathCallback != null) {
-                    if (resultCode == Activity.RESULT_OK && data != null) {
-                        if (data.getClipData() != null) {
-                            ClipData clipData = data.getClipData();
-                            Uri[] uris = new Uri[clipData.getItemCount()];
-                            for (int i = 0; i < clipData.getItemCount(); i++) {
-                                uris[i] = clipData.getItemAt(i).getUri();
-                            }
-                            filePathCallback.onReceiveValue(uris);
-                        } else if (data.getData() != null) {
-                            Uri uri = data.getData();
-                            filePathCallback.onReceiveValue(new Uri[]{uri});
-                        } else {
-                            filePathCallback.onReceiveValue(null);
-                        }
-                    } else {
-                        filePathCallback.onReceiveValue(null);
-                    }
-                    mGutenbergView.resetFilePathCallback();
-                }
-            }
-        }
-
         if (requestCode == UNSUPPORTED_BLOCK_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
                 String blockId = data.getStringExtra(WPGutenbergWebViewActivity.ARG_BLOCK_ID);
@@ -875,10 +780,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     }
 
     private void setEditorProgressBarVisibility(boolean shown) {
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
-
         if (isAdded() && getView() != null) {
             getView().findViewById(R.id.editor_progress).setVisibility(shown ? View.VISIBLE : View.GONE);
         }
@@ -1184,9 +1085,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
             title = "";
         }
 
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
         getGutenbergContainerFragment().setTitle(title.toString());
     }
 
@@ -1194,11 +1092,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     public void setContent(CharSequence text) {
         if (text == null) {
             text = "";
-        }
-
-        if (mIsNewGutenbergEnabled) {
-            mGutenbergView.setContent((String) text);
-            return;
         }
 
         String postContent = removeVisualEditorProgressTag(text.toString());
@@ -1256,9 +1149,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     }
 
     public void sendToJSPostSaveEvent() {
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
         getGutenbergContainerFragment().sendToJSPostSaveEvent();
     }
 
@@ -1282,27 +1172,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     @Override
     public Pair<CharSequence, CharSequence> getTitleAndContent(CharSequence originalContent) throws
             EditorFragmentNotAddedException {
-        if (mIsNewGutenbergEnabled) {
-            final Pair<CharSequence, CharSequence>[] result = new Pair[1];
-            final CountDownLatch latch = new CountDownLatch(1);
-
-            mGutenbergView.getTitleAndContent(new TitleAndContentCallback() {
-                @Override
-                public void onResult(@Nullable String title, @NonNull String content) {
-                    result[0] = new Pair<>(title, content);
-                    latch.countDown();
-                }
-            }, true);
-
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return new Pair<>("", "");
-            }
-
-            return result[0] != null ? result[0] : new Pair<>("", "");
-        }
         if (!isAdded()) {
             throw new EditorFragmentNotAddedException();
         }
@@ -1388,11 +1257,9 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
     }
 
     public void onEditorContentChanged(@NonNull ContentChangeListener listener) {
-        mContentChangeListener = listener;
     }
 
     public void onOpenMediaLibrary(@NonNull OpenMediaLibraryListener listener) {
-        mOpenMediaLibraryListener = listener;
     }
 
     @Override
@@ -1424,63 +1291,34 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
         boolean isNetworkUrl = URLUtil.isNetworkUrl(mediaUrl);
 
-        if (mIsNewGutenbergEnabled) {
-            // Disable upload handling until supported--e.g., media shared to the app
-            if (mGutenbergView == null || !isNetworkUrl) {
-                return;
+        ArrayList<Media> processedMediaList = new ArrayList<>();
+
+        if (!isNetworkUrl) {
+            for (Media media : processedMediaList) {
+                mUploadingMediaProgressMax.put(String.valueOf(media.getId()), 0f);
             }
-
-            ArrayList<org.wordpress.gutenberg.Media> processedMediaList = new ArrayList<>();
-
-            for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
-                int mediaId = Integer.parseInt(mediaEntry.getValue().getMediaId());
-                String url = mediaEntry.getKey();
-                MediaFile mediaFile = mediaEntry.getValue();
-                Bundle metadata = new Bundle();
-                String videoPressGuid = mediaFile.getVideoPressGuid();
-                if (videoPressGuid != null) {
-                    metadata.putString("videopressGUID", videoPressGuid);
-                }
-                processedMediaList.add(createMediaUsingMimeType(mediaId,
-                        url,
-                        mediaFile.getMimeType(),
-                        mediaFile.getCaption(),
-                        mediaFile.getTitle(),
-                        mediaFile.getAlt()));
-            }
-
-            String mediaString = new Gson().toJson(processedMediaList);
-            mGutenbergView.setMediaUploadAttachment(mediaString);
-        } else {
-            ArrayList<Media> processedMediaList = new ArrayList<>();
-
-            if (!isNetworkUrl) {
-                for (Media media : processedMediaList) {
-                    mUploadingMediaProgressMax.put(String.valueOf(media.getId()), 0f);
-                }
-            }
-
-            for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
-                int mediaId = isNetworkUrl ? Integer.valueOf(mediaEntry.getValue().getMediaId())
-                        : mediaEntry.getValue().getId();
-                String url = isNetworkUrl ? mediaEntry.getKey() : "file://" + mediaEntry.getKey();
-                MediaFile mediaFile = mediaEntry.getValue();
-                WritableNativeMap metadata = new WritableNativeMap();
-                String videoPressGuid = mediaFile.getVideoPressGuid();
-                if (videoPressGuid != null) {
-                    metadata.putString("videopressGUID", videoPressGuid);
-                }
-                processedMediaList.add(createRNMediaUsingMimeType(mediaId,
-                        url,
-                        mediaFile.getMimeType(),
-                        mediaFile.getCaption(),
-                        mediaFile.getTitle(),
-                        mediaFile.getAlt(),
-                        metadata));
-            }
-
-            getGutenbergContainerFragment().appendMediaFiles(processedMediaList);
         }
+
+        for (Map.Entry<String, MediaFile> mediaEntry : mediaList.entrySet()) {
+            int mediaId = isNetworkUrl ? Integer.valueOf(mediaEntry.getValue().getMediaId())
+                    : mediaEntry.getValue().getId();
+            String url = isNetworkUrl ? mediaEntry.getKey() : "file://" + mediaEntry.getKey();
+            MediaFile mediaFile = mediaEntry.getValue();
+            WritableNativeMap metadata = new WritableNativeMap();
+            String videoPressGuid = mediaFile.getVideoPressGuid();
+            if (videoPressGuid != null) {
+                metadata.putString("videopressGUID", videoPressGuid);
+            }
+            processedMediaList.add(createRNMediaUsingMimeType(mediaId,
+                    url,
+                    mediaFile.getMimeType(),
+                    mediaFile.getCaption(),
+                    mediaFile.getTitle(),
+                    mediaFile.getAlt(),
+                    metadata));
+        }
+
+        getGutenbergContainerFragment().appendMediaFiles(processedMediaList);
     }
 
     @Override
@@ -1540,10 +1378,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     @Override
     public void onDestroy() {
-        if (mIsNewGutenbergEnabled && mGutenbergView != null) {
-            GutenbergWebViewPool.recycleWebView(mGutenbergView);
-            mContentChangeListener = null;
-        }
         hideSavingProgressDialog();
         super.onDestroy();
     }
@@ -1617,17 +1451,11 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     @Override
     public void onEditorThemeUpdated(Bundle editorTheme) {
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
         getGutenbergContainerFragment().updateTheme(editorTheme);
     }
 
     @Override
     public void showNotice(String message) {
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
         getGutenbergContainerFragment().showNotice(message);
     }
 
@@ -1664,9 +1492,6 @@ public class GutenbergEditorFragment extends EditorFragmentAbstract implements
 
     @Override
     public void onConnectionStatusChange(boolean isConnected) {
-        if (mIsNewGutenbergEnabled) {
-            return;
-        }
         getGutenbergContainerFragment().onConnectionStatusChange(isConnected);
         if (isConnected && hasFailedMediaUploads()) {
             mEditorFragmentListener.onMediaRetryAll(mFailedMediaIds);

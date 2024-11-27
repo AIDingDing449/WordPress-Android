@@ -52,6 +52,7 @@ public class PostEditorAnalyticsSession implements Serializable {
 
     public enum Editor {
         GUTENBERG,
+        GUTENBERG_KIT,
         CLASSIC,
         HTML,
         WP_STORIES_CREATOR

@@ -72,6 +72,7 @@ import org.wordpress.android.editor.EditorThemeUpdateListener
 import org.wordpress.android.editor.ExceptionLogger
 import org.wordpress.android.editor.gutenberg.DialogVisibility
 import org.wordpress.android.editor.gutenberg.GutenbergEditorFragment
+import org.wordpress.android.editor.gutenberg.GutenbergKitEditorFragment
 import org.wordpress.android.editor.gutenberg.GutenbergNetworkConnectionListener
 import org.wordpress.android.editor.gutenberg.GutenbergPropsBuilder
 import org.wordpress.android.editor.gutenberg.GutenbergWebViewAuthorizationData
@@ -234,8 +235,8 @@ import org.wordpress.android.util.analytics.AnalyticsUtils
 import org.wordpress.android.util.analytics.AnalyticsUtils.BlockEditorEnabledSource
 import org.wordpress.android.util.config.ContactSupportFeatureConfig
 import org.wordpress.android.util.config.PostConflictResolutionFeatureConfig
-import org.wordpress.android.util.config.NewGutenbergFeatureConfig
-import org.wordpress.android.util.config.NewGutenbergThemeStylesFeatureConfig
+import org.wordpress.android.util.config.GutenbergKitFeatureConfig
+import org.wordpress.android.util.config.GutenbergKitThemeStylesFeatureConfig
 import org.wordpress.android.util.extensions.setLiftOnScrollTargetViewIdAndRequestLayout
 import org.wordpress.android.util.helpers.MediaFile
 import org.wordpress.android.util.helpers.MediaGallery
@@ -314,7 +315,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
     private var isXPostsCapable: Boolean? = null
     private var onGetSuggestionResult: Consumer<String?>? = null
     private var isVoiceContentSet = false
-    private var isNewGutenbergEditor = false
+    private var isGutenbergKitEditor = false
 
     // For opening the context menu after permissions have been granted
     private var menuView: View? = null
@@ -409,8 +410,8 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
 
     @Inject lateinit var postConflictResolutionFeatureConfig: PostConflictResolutionFeatureConfig
 
-    @Inject lateinit var newGutenbergFeatureConfig: NewGutenbergFeatureConfig
-    @Inject lateinit var newGutenbergThemeStylesConfig: NewGutenbergThemeStylesFeatureConfig
+    @Inject lateinit var gutenbergKitFeatureConfig: GutenbergKitFeatureConfig
+    @Inject lateinit var gutenbergKitThemeStylesConfig: GutenbergKitThemeStylesFeatureConfig
 
     @Inject lateinit var storePostViewModel: StorePostViewModel
     @Inject lateinit var storageUtilsViewModel: StorageUtilsViewModel
@@ -516,7 +517,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         }
         onBackPressedDispatcher.addCallback(this, callback)
         dispatcher.register(this)
-        isNewGutenbergEditor = newGutenbergFeatureConfig.isEnabled()
+        isGutenbergKitEditor = gutenbergKitFeatureConfig.isEnabled()
 
         createEditShareMessageActivityResultLauncher()
 
@@ -725,7 +726,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                 }
 
             isNewPost = state.getBoolean(EditPostActivityConstants.STATE_KEY_IS_NEW_POST, false)
-            isNewGutenbergEditor = state.getBoolean(EditPostActivityConstants.STATE_KEY_IS_NEW_GUTENBERG, false)
+            isGutenbergKitEditor = state.getBoolean(EditPostActivityConstants.STATE_KEY_IS_GUTENBERG_KIT, false)
             isVoiceContentSet = state.getBoolean(EditPostActivityConstants.STATE_KEY_IS_VOICE_CONTENT_SET, false)
             updatePostLoadingAndDialogState(
                 fromInt(
@@ -782,7 +783,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
     }
 
     private fun setupEditor() {
-        if (isNewGutenbergEditor) {
+        if (isGutenbergKitEditor) {
             GutenbergWebViewPool.getPreloadedWebView(getContext())
         }
         // Check whether to show the visual editor
@@ -1000,7 +1001,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         editorMedia.toastMessage.observe(this) { event: Event<ToastMessageHolder?> ->
             event.getContentIfNotHandled()?.show(this)
         }
-        if (!isNewGutenbergEditor) {
+        if (!isGutenbergKitEditor) {
             storePostViewModel.onSavePostTriggered.observe(this) { unitEvent: Event<Unit> ->
                 unitEvent.applyIfNotHandled {
                     updateAndSavePostAsync()
@@ -1201,7 +1202,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         outState.putInt(EditPostActivityConstants.STATE_KEY_POST_LOADING_STATE, postLoadingState.value)
         outState.putBoolean(EditPostActivityConstants.STATE_KEY_IS_NEW_POST, isNewPost)
         outState.putBoolean(EditPostActivityConstants.STATE_KEY_IS_VOICE_CONTENT_SET, isVoiceContentSet)
-        outState.putBoolean(EditPostActivityConstants.STATE_KEY_IS_NEW_GUTENBERG, isNewGutenbergEditor)
+        outState.putBoolean(EditPostActivityConstants.STATE_KEY_IS_GUTENBERG_KIT, isGutenbergKitEditor)
         outState.putBoolean(
             EditPostActivityConstants.STATE_KEY_IS_PHOTO_PICKER_VISIBLE,
             editorPhotoPicker?.isPhotoPickerShowing() ?: false
@@ -1411,11 +1412,11 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         val helpMenuItem = menu.findItem(R.id.menu_editor_help)
         if (undoItem != null) {
             undoItem.setEnabled(menuHasUndo)
-            undoItem.setVisible(!htmlModeMenuStateOn && !isNewGutenbergEditor)
+            undoItem.setVisible(!htmlModeMenuStateOn && !isGutenbergKitEditor)
         }
         if (redoItem != null) {
             redoItem.setEnabled(menuHasRedo)
-            redoItem.setVisible(!htmlModeMenuStateOn && !isNewGutenbergEditor)
+            redoItem.setVisible(!htmlModeMenuStateOn && !isGutenbergKitEditor)
         }
         if (secondaryAction != null && editPostRepository.hasPost()) {
             secondaryAction.setVisible(showMenuItems && this.secondaryAction.isVisible)
@@ -1425,7 +1426,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         if (viewHtmlModeMenuItem != null) {
             viewHtmlModeMenuItem.setVisible(
                 (((editorFragment is AztecEditorFragment)
-                        || (editorFragment is GutenbergEditorFragment))) && !isNewGutenbergEditor && showMenuItems
+                        || (editorFragment is GutenbergEditorFragment))) && showMenuItems
             )
             viewHtmlModeMenuItem.setTitle(
                 if (htmlModeMenuStateOn) R.string.menu_visual_mode else R.string.menu_html_mode)
@@ -1462,7 +1463,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         }
         val contentInfo = menu.findItem(R.id.menu_content_info)
         (editorFragment as? GutenbergEditorFragment)?.let { gutenbergEditorFragment ->
-            if (isNewGutenbergEditor) {
+            if (isGutenbergKitEditor) {
                 contentInfo.isVisible = false
             } else {
                 contentInfo.setOnMenuItemClickListener { _: MenuItem? ->
@@ -1487,7 +1488,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
             val showHelpAndSupport = jetpackFeatureRemovalPhaseHelper.shouldShowHelpAndSupportOnEditor()
             val helpMenuTitle = if (showHelpAndSupport) R.string.help_and_support else R.string.help
             helpMenuItem.setTitle(helpMenuTitle)
-            if (editorFragment is GutenbergEditorFragment && showMenuItems && !isNewGutenbergEditor) {
+            if (editorFragment is GutenbergEditorFragment && showMenuItems) {
                 helpMenuItem.setVisible(true)
             } else {
                 helpMenuItem.setVisible(false)
@@ -1620,6 +1621,8 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                     (editorFragment as AztecEditorFragment).onToolbarHtmlButtonClicked()
                 } else if (editorFragment is GutenbergEditorFragment) {
                     (editorFragment as GutenbergEditorFragment).onToggleHtmlMode()
+                } else if (editorFragment is GutenbergKitEditorFragment) {
+                    (editorFragment as GutenbergKitEditorFragment).onToggleHtmlMode()
                 }
             } else if (itemId == R.id.menu_switch_to_gutenberg) {
                 // The following boolean check should be always redundant but was added to manage
@@ -1644,9 +1647,15 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                 if (editorFragment is GutenbergEditorFragment) {
                     (editorFragment as GutenbergEditorFragment).onUndoPressed()
                 }
+                if (editorFragment is GutenbergKitEditorFragment) {
+                    (editorFragment as GutenbergKitEditorFragment).onUndoPressed()
+                }
             } else if (itemId == R.id.menu_redo_action) {
                 if (editorFragment is GutenbergEditorFragment) {
                     (editorFragment as GutenbergEditorFragment).onRedoPressed()
+                }
+                if (editorFragment is GutenbergKitEditorFragment) {
+                    (editorFragment as GutenbergKitEditorFragment).onRedoPressed()
                 }
             }
         }
@@ -1799,13 +1808,14 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
 
     private fun trackPostSessionEditorModeSwitch() {
         val isGutenberg: Boolean = editorFragment is GutenbergEditorFragment
+        val isGutenbergKit: Boolean = editorFragment is GutenbergKitEditorFragment
         postEditorAnalyticsSession?.switchEditor(
-            if (htmlModeMenuStateOn) PostEditorAnalyticsSession.Editor.HTML
-            else
-            (
-                if (isGutenberg) PostEditorAnalyticsSession.Editor.GUTENBERG
-                else PostEditorAnalyticsSession.Editor.CLASSIC
-            )
+            when {
+                htmlModeMenuStateOn -> PostEditorAnalyticsSession.Editor.HTML
+                isGutenberg -> PostEditorAnalyticsSession.Editor.GUTENBERG
+                isGutenbergKit -> PostEditorAnalyticsSession.Editor.GUTENBERG_KIT
+                else -> PostEditorAnalyticsSession.Editor.CLASSIC
+            }
         )
     }
 
@@ -2161,7 +2171,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         i.putExtra(EditPostActivityConstants.EXTRA_RESTART_EDITOR, restartEditorOption.name)
         i.putExtra(EditPostActivityConstants.STATE_KEY_EDITOR_SESSION_DATA, postEditorAnalyticsSession)
         i.putExtra(EditPostActivityConstants.EXTRA_IS_NEW_POST, isNewPost)
-        i.putExtra(EditPostActivityConstants.STATE_KEY_IS_NEW_GUTENBERG, isNewGutenbergEditor)
+        i.putExtra(EditPostActivityConstants.STATE_KEY_IS_GUTENBERG_KIT, isGutenbergKitEditor)
         setResult(RESULT_OK, i)
     }
 
@@ -2391,7 +2401,9 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
         override fun getItem(position: Int): Fragment {
             return when (position) {
                 PAGE_CONTENT -> {
-                    if (showGutenbergEditor) {
+                    if (isGutenbergKitEditor && showGutenbergEditor) {
+                        createGutenbergKitEditorFragment()
+                    } else if (showGutenbergEditor) {
                         createGutenbergEditorFragment()
                     } else {
                         // If gutenberg editor is not selected, default to Aztec.
@@ -2405,7 +2417,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
             }
         }
 
-        private fun createGutenbergEditorFragment(): GutenbergEditorFragment {
+        private fun createGutenbergKitEditorFragment(): GutenbergKitEditorFragment {
             // Enable gutenberg on the site & show the informative popup upon opening
             // the GB editor the first time when the remote setting value is still null
             setGutenbergEnabledIfNeeded()
@@ -2414,7 +2426,6 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
             }
 
             val isWpCom = site.isWPCom || siteModel.isPrivateWPComAtomic || siteModel.isWPComAtomic
-            val gutenbergPropsBuilder = gutenbergPropsBuilder
             val gutenbergWebViewAuthorizationData = GutenbergWebViewAuthorizationData(
                 siteModel.url,
                 isWpCom,
@@ -2445,7 +2456,41 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                 "siteApiRoot" to siteApiRoot,
                 "authHeader" to authHeader,
                 "siteApiNamespace" to siteApiNamespace,
-                "themeStyles" to newGutenbergThemeStylesConfig.isEnabled()
+                "themeStyles" to gutenbergKitThemeStylesConfig.isEnabled()
+            )
+
+            return GutenbergKitEditorFragment.newInstance(
+                getContext(),
+                isNewPost,
+                gutenbergWebViewAuthorizationData,
+                jetpackFeatureRemovalPhaseHelper.shouldShowJetpackPoweredEditorFeatures(),
+                settings
+            )
+        }
+
+        private fun createGutenbergEditorFragment(): GutenbergEditorFragment {
+            // Enable gutenberg on the site & show the informative popup upon opening
+            // the GB editor the first time when the remote setting value is still null
+            setGutenbergEnabledIfNeeded()
+            xPostsCapabilityChecker.retrieveCapability(siteModel) { isXpostsCapable ->
+                onXpostsSettingsCapability(isXpostsCapable)
+            }
+
+            val isWpCom = site.isWPCom || siteModel.isPrivateWPComAtomic || siteModel.isWPComAtomic
+            val gutenbergPropsBuilder = gutenbergPropsBuilder
+            val gutenbergWebViewAuthorizationData = GutenbergWebViewAuthorizationData(
+                siteModel.url,
+                isWpCom,
+                accountStore.account.userId,
+                accountStore.account.userName,
+                accountStore.accessToken,
+                siteModel.selfHostedSiteId,
+                siteModel.username,
+                siteModel.password,
+                siteModel.isUsingWpComRestApi,
+                siteModel.webEditor,
+                userAgent.toString(),
+                isJetpackSsoEnabled
             )
 
             return GutenbergEditorFragment.newInstance(
@@ -2453,9 +2498,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                 isNewPost,
                 gutenbergWebViewAuthorizationData,
                 gutenbergPropsBuilder,
-                jetpackFeatureRemovalPhaseHelper.shouldShowJetpackPoweredEditorFeatures(),
-                isNewGutenbergEditor,
-                settings
+                jetpackFeatureRemovalPhaseHelper.shouldShowJetpackPoweredEditorFeatures()
             )
         }
 
@@ -2465,7 +2508,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
                 PAGE_CONTENT -> {
                     editorFragment = fragment as EditorFragmentAbstract
                     editorFragment?.setImageLoader(imageLoader)
-                    if (isNewGutenbergEditor) {
+                    if (isGutenbergKitEditor) {
                         editorFragment?.onEditorContentChanged(object : GutenbergView.ContentChangeListener {
                             override fun onContentChanged(title: String, content: String) {
                                 storePostViewModel.savePostWithDelay()
@@ -3592,7 +3635,7 @@ class EditPostActivity : LocaleAwareActivity(), EditorFragmentActivity, EditorIm
     }
 
     private fun updateVoiceContentIfNeeded() {
-        if (isNewGutenbergEditor) {
+        if (isGutenbergKitEditor) {
             return
         }
         // Check if voice content exists and this is a new post for a Gutenberg editor fragment
