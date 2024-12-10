@@ -1,2 +1,4 @@
-
-
+This month, we've:
+- Fixed some Dark Mode bugs
+- We've brought the experimental editor to Android – give it a try and let us know what you think!
+- Adjusted how users log into WordPress.com – this fixes a long-standing issue where you couldn't log in if you used a Passkey.
