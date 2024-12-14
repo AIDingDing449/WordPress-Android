@@ -1,5 +1,5 @@
-25.2:
-Abbiamo risolto due grandi problemi in questa versione:
-* Ora puoi aggiornare nuovamente la data di pubblicazione di un articolo.
-* Alcuni utenti non riuscivano ad aggiornare i contenuti del loro articolo.
-Come sempre, contatta il supporto se c'è qualcosa che non va.
+25.5:
+Questo mese abbiamo:
+- Sistemato alcuni bug relativi alla Dark Mode
+- Lanciato l'editor in versione trial su Android: provalo e facci sapere cosa ne pensi!
+- Sistemato la modalità di accesso a WordPress.com per risolvere un problema di lunga data relativo all'impossibilità di effettuare l'accesso con un Passkey.

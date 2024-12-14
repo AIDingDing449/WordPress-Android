@@ -1,5 +1,4 @@
-25.2:
-We hebben twee grote problemen opgelost in deze release:
-* Je kunt nu weer de datum van een gepubliceerd bericht updaten.
-* Sommige gebruikers konden de inhoud van hun bericht niet updaten.
-Zoals altijd, neem contact op met ondersteuning als er iets niet goed werkt!
+25.5: Deze maand hebben we: 
+- Opgelost: enkele Dark Mode bugs 
+- We hebben de experimentele editor naar Android gebracht – probeer het eens en laat ons weten wat je ervan vindt! 
+- Aangepast hoe gebruikers inloggen op WordPress.com – dit lost een langdurig probleem op waarbij je niet kon inloggen als je een Passkey gebruikte.

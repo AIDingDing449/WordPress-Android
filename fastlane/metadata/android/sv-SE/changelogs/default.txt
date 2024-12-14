@@ -1,5 +1,5 @@
-25.2:
-I den här versionen har vi åtgärdat två stora problem:
-* Det är nu möjligt att uppdatera publiceringsdatumet för inlägg igen.
-* Vissa användare kunde inte uppdatera sitt inläggsinnehåll.
-Som alltid, kontakta supporten om något inte fungerar som det ska.
+25.5:
+Den här månaden har vi:
+- Åtgärdat några buggar i mörkt läge
+- Infört den experimentella redigeraren på Android. Prova den och berätta vad du tycker.
+- Justerat hur användare loggar in på WordPress.com. Detta åtgärdar ett långvarigt problem där du inte kunde logga in om du använde en säkerhetsnyckel.
