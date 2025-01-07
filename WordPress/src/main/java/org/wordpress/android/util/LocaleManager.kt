@@ -44,33 +44,6 @@ object LocaleManager {
         return langID ?: deviceLanguageCode
     }
 
-    @Suppress("ForbiddenComment")
-    /**
-     * Method gets around a bug in the java.util.Formatter for API 7.x as detailed here
-     * [https://bugs.openjdk.java.net/browse/JDK-8167567]. Any strings that contain
-     * locale-specific grouping separators should use:
-     *
-     * `String.format(LocaleManager.getSafeLocale(context), baseString, val)`
-     *
-     * An example of a string that contains locale-specific grouping separators:
-     * `
-     * <string name="test">%,d likes</string>
-    `*
-     * TODO: This is a workaround for a bug in API 7, which we no longer support. Investigate removing this.
-     */
-    @JvmStatic
-    fun getSafeLocale(context: Context?): Locale {
-        val baseLocale: Locale
-        if (context == null) {
-            baseLocale = Locale.getDefault()
-        } else {
-            val config = context.resources.configuration
-            baseLocale = config.locales[0]
-        }
-
-        return languageLocale(baseLocale.language)
-    }
-
     /**
      * Gets a locale for the given language code.
      *
