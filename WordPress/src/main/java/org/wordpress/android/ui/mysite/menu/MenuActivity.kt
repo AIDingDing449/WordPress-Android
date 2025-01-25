@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +59,7 @@ import org.wordpress.android.ui.ActivityLauncher
 import org.wordpress.android.ui.ActivityNavigator
 import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.compose.utils.uiStringText
+import org.wordpress.android.ui.main.BaseAppCompatActivity
 import org.wordpress.android.ui.mysite.SiteNavigationAction
 import org.wordpress.android.ui.mysite.items.listitem.ListItemAction
 import org.wordpress.android.ui.pages.SnackbarMessageHolder
@@ -77,7 +77,7 @@ import javax.inject.Inject
 const val KEY_QUICK_START_EVENT = "key_quick_start_event"
 
 @AndroidEntryPoint
-class MenuActivity : AppCompatActivity() {
+class MenuActivity : BaseAppCompatActivity() {
     @Inject
     lateinit var activityNavigator: ActivityNavigator
 
