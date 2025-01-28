@@ -48,7 +48,9 @@ class LoginPrologueRevampedFragment : Fragment() {
         setContent {
             AppThemeM3 {
                 LoginScreenRevamped(
-                    onWpComLoginClicked = loginPrologueListener::showEmailLoginScreen,
+                    onWpComLoginClicked = {
+                        loginPrologueListener.showWPcomLoginScreen(this.context)
+                    },
                     onSiteAddressLoginClicked = loginPrologueListener::loginViaSiteAddress,
                 )
             }

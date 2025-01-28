@@ -114,7 +114,18 @@
         <activity
             android:name=".ui.accounts.LoginActivity"
             android:theme="@style/LoginTheme.TransparentSystemBars"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="wpcom-authorize"
+                    android:scheme="${magicLinkScheme}" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".ui.accounts.LoginMagicLinkInterceptActivity"
@@ -177,6 +188,10 @@
         <activity
             android:name="zendesk.support.requestlist.RequestListActivity"
             android:theme="@style/WordPress.ZenDesk" />
+
+        <activity
+            android:name=".support.SupportWebViewActivity"
+            android:theme="@style/WordPress.NoActionBar.NoEdgeToEdge" />
 
         <!-- empty title -->
 
@@ -769,10 +784,6 @@
             android:label="@string/my_profile"
             android:theme="@style/WordPress.NoActionBar" />
 
-        <activity
-            android:name=".support.SupportWebViewActivity"
-            android:theme="@style/WordPress.NoActionBar" />
-
         <!-- Lib activities-->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
@@ -1155,6 +1166,9 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
         <!-- required for Android 11 (API level 30) or higher -->
         <package android:name="com.jetpack.android" />
