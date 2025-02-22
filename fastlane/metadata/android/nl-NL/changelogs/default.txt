@@ -1,5 +1,3 @@
-25.6:  
-Deze update:  
-- Oplost een zeldzame crash bij het registreren van een domein.  
-- Oplost een aantal onder-de-motorkap dingen die de app betrouwbaarder zouden moeten maken.  
-- Gebruikt een web-gebaseerde aanpak voor WordPress.com login. Dit zou betrouwbaarder moeten zijn voor de meeste gebruikers, maar neem contact met ons op als je problemen hebt!
+25.7: slechts twee oplossingen voor de experimentele blok-editor deze keer:
+1. je kunt feedback over de editor verzenden terwijl je het gebruikt. 
+2. we hebben een bug opgelost waarbij de code weergave niet goed werkte
