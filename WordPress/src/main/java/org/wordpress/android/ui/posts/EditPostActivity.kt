@@ -445,10 +445,6 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
 
     private fun newPostSetup(title: String? = null, content: String? = null) {
         isNewPost = true
-        if (!siteModel.isVisible) {
-            showErrorAndFinish(R.string.error_blog_hidden)
-            return
-        }
         // Create a new post
         editPostRepository.set {
             val post = postStore.instantiatePostModel(
@@ -2519,6 +2515,9 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
             val authHeader = "Bearer $authToken"
             val siteApiNamespace = arrayOf("sites/${site.siteId}", "sites/${UrlUtils.removeScheme(siteModel.url)}")
 
+            val languageString = perAppLocaleManager.getCurrentLocaleLanguageCode()
+            val wpcomLocaleSlug = languageString.replace("_", "-").lowercase()
+
             val settings = mutableMapOf<String, Any?>(
                 "postId" to editPostRepository.getPost()?.remotePostId?.toInt(),
                 "postType" to postType,
@@ -2531,6 +2530,7 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
                 "themeStyles" to gutenbergKitThemeStylesConfig.isEnabled(),
                 // Limited to Simple sites until application passwords are supported
                 "plugins" to (gutenbergKitPluginsFeature.isEnabled() && site.isWPCom),
+                "locale" to wpcomLocaleSlug,
                 "webViewGlobals" to listOf(
                     WebViewGlobal(
                         "_currentSiteType",
