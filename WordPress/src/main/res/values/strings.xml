@@ -590,7 +590,7 @@
     <string name="share_intent_pick_site">Pick site</string>
     <string name="share_intent_adding_to">Adding to</string>
     <string name="share_action">Share</string>
-    <string name="cant_share_no_visible_blog">You can\'t share to WordPress without a visible blog</string>
+    <string name="cant_share_no_blog">You can\'t share to WordPress without a blog</string>
 
     <!-- file errors -->
     <string name="file_error_create">Couldn\'t create temp file for media upload. Make sure there is enough free space on your device.</string>
@@ -4987,4 +4987,7 @@ translators: %s: Select control option value e.g: "Auto, 25%". -->
     <string name="voice_to_content_generic_error">Post from audio is unavailable at the moment, please try again later.</string>
     <string name="gutenberg_native_replace_image" tools:ignore="UnusedResources" a8c-src-lib="gutenberg">Replace image</string>
     <string name="default_web_client_id" a8c-src-lib="module:login">placeholder</string>
+
+    <!-- Application Password authentication -->
+    <string name="application_password_credentials_stored">Application password credentials stored for %1$s</string>
 </resources>
