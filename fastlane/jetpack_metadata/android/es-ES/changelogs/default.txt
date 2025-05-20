@@ -1,5 +1,5 @@
-25.6
-:Esta actualización
-:- Corrige un error poco frecuente al registrar un dominio.
-- Corrige varios aspectos de funcionamiento que mejoran la fiabilidad de la aplicación.
-- Utiliza un sistema basado en web para acceder a WordPress.com. Debería ser más fiable para la mayoría de los usuarios, pero si tienes problemas, ponte en contacto con el servicio de asistencia.
+25.8:
+Hemos hecho algunas correcciones en el editor experimental.
+- Puedes elegir, mover y editar bloques de grupo, que también son más fáciles de usar.
+- Tu contenido no se restablecerá cuando cambies la orientación de tu dispositivo.
+- Hemos corregido un error molesto que a veces provocaba que el editor fallara al guardar los cambios.
