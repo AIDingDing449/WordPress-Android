@@ -97,10 +97,9 @@ import org.wordpress.android.ui.posts.RemotePreviewLogicHelper.RemotePreviewType
 import org.wordpress.android.ui.prefs.AccountSettingsActivity;
 import org.wordpress.android.ui.prefs.AppSettingsActivity;
 import org.wordpress.android.ui.prefs.BlogPreferencesActivity;
-import org.wordpress.android.ui.prefs.MyProfileActivity;
+import org.wordpress.android.ui.prefs.experimentalfeatures.ExperimentalFeaturesActivity;
 import org.wordpress.android.ui.prefs.categories.detail.CategoryDetailActivity;
 import org.wordpress.android.ui.prefs.categories.list.CategoriesListActivity;
-import org.wordpress.android.ui.prefs.experimentalfeatures.ExperimentalFeaturesActivity;
 import org.wordpress.android.ui.prefs.notifications.NotificationsSettingsActivity;
 import org.wordpress.android.ui.publicize.PublicizeListActivity;
 import org.wordpress.android.ui.qrcodeauth.QRCodeAuthActivity;
@@ -719,8 +718,7 @@ public class ActivityLauncher {
         AnalyticsUtils.trackWithSiteDetails(AnalyticsTracker.Stat.THEMES_ACCESSED_THEMES_BROWSER, site);
     }
 
-    @SuppressWarnings("unused")
-    public static void viewCurrentBlogSubscribers(@NonNull Context context, @NonNull SiteModel site) {
+    public static void viewCurrentBlogSubscribers(@NonNull Context context) {
         // for now we only show the subscribers screen for debug users since it's very much a WIP
         if (BuildConfig.DEBUG) {
             Intent intent = new Intent(context, SubscribersActivity.class);
@@ -1234,12 +1232,6 @@ public class ActivityLauncher {
             String postTitle
     ) {
         WPWebViewActivity.openActionableEmptyViewDirectly(context, actionableState, postTitle);
-    }
-
-    public static void viewMyProfile(Context context) {
-        Intent intent = new Intent(context, MyProfileActivity.class);
-        AnalyticsTracker.track(AnalyticsTracker.Stat.OPENED_MY_PROFILE);
-        context.startActivity(intent);
     }
 
     public static void viewMeActivityForResult(Activity activity) {
