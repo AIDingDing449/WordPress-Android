@@ -1,3 +1,2 @@
-25.9:
-- El icono «yo» es ahora el color correcto cuando estás en modo oscuro.
-- Hemos añadido una advertencia que te indica si el escaneo del código QR no se ha realizado correctamente. Sin esperas, sin conjeturas, sin problemas.
+26.0:
+Hemos añadido la autenticación de contraseñas de aplicaciones. Todavía es experimental, pero una vez que esté completamente integrada, podremos mejorar las funciones con las que ya cuenta e introducir otras nuevas. ¡Por fin!

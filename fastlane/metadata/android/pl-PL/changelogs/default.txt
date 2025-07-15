@@ -1,4 +1,2 @@
-25.9:
-- Klawiatura nie nachodzi już na edytor, co oznacza, że przez cały czas widzisz swoje niesamowite dzieło.
-- Ikonka „ja” ma teraz prawidłowy kolor, gdy korzystasz z trybu ciemnego.
-- Dodaliśmy ostrzeżenie, które poinformuje, jeśli skanowanie kodu QR nie powiodło się. Nie musisz czekać, nie musisz zgadywać, nie ma problemu.
+26.0:
+Dodaliśmy uwierzytelnianie za pomocą haseł aplikacji. Wciąż jest to rozwiązanie eksperymentalne, ale gdy zostanie w pełni zintegrowane, będziemy mogli ulepszyć istniejące funkcje i wprowadzić nowe. Trzymaj rękę na pulsie.
