@@ -40,6 +40,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModelProvider
 import com.automattic.android.tracks.crashlogging.CrashLogging
 import com.automattic.android.tracks.crashlogging.JsException
 import com.automattic.android.tracks.crashlogging.JsExceptionCallback
@@ -157,7 +158,6 @@ import org.wordpress.android.ui.posts.EditPostPublishSettingsFragment.Companion.
 import org.wordpress.android.ui.posts.EditPostRepository.UpdatePostResult
 import org.wordpress.android.ui.posts.EditPostRepository.UpdatePostResult.Updated
 import org.wordpress.android.ui.posts.EditPostSettingsFragment.EditPostActivityHook
-import org.wordpress.android.ui.posts.EditPostSettingsFragment.EditPostSettingsCallback
 import org.wordpress.android.ui.posts.EditorBloggingPromptsViewModel.EditorLoadedPrompt
 import org.wordpress.android.ui.posts.EditorJetpackSocialViewModel.ActionEvent.OpenEditShareMessage
 import org.wordpress.android.ui.posts.EditorJetpackSocialViewModel.ActionEvent.OpenSocialConnectionsList
@@ -168,7 +168,6 @@ import org.wordpress.android.ui.posts.HistoryListFragment.HistoryItemClickInterf
 import org.wordpress.android.ui.posts.InsertMediaDialog.InsertMediaCallback
 import org.wordpress.android.ui.posts.InsertMediaDialog.InsertType
 import org.wordpress.android.ui.posts.PostEditorAnalyticsSession.Outcome
-import org.wordpress.android.ui.posts.PostSettingsListDialogFragment.OnPostSettingsDialogFragmentListener
 import org.wordpress.android.ui.posts.RemotePreviewLogicHelper.PreviewLogicOperationResult
 import org.wordpress.android.ui.posts.RemotePreviewLogicHelper.RemotePreviewHelperFunctions
 import org.wordpress.android.ui.posts.RemotePreviewLogicHelper.RemotePreviewType
@@ -278,11 +277,9 @@ import kotlin.math.max
 @Suppress("LargeClass")
 class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, EditorImageSettingsListener,
     EditorImagePreviewListener, EditorEditMediaListener, EditorDragAndDropListener, EditorFragmentListener,
-    ActivityCompat.OnRequestPermissionsResultCallback,
-    PhotoPickerListener, EditorPhotoPickerListener, EditorMediaListener, EditPostActivityHook,
-    OnPostSettingsDialogFragmentListener, HistoryItemClickInterface, EditPostSettingsCallback,
-    PrepublishingBottomSheetListener, PrivateAtCookieProgressDialogOnDismissListener, ExceptionLogger,
-    SiteSettingsListener {
+    ActivityCompat.OnRequestPermissionsResultCallback, PhotoPickerListener, EditorPhotoPickerListener,
+    EditorMediaListener, EditPostActivityHook, HistoryItemClickInterface, PrepublishingBottomSheetListener,
+    PrivateAtCookieProgressDialogOnDismissListener, ExceptionLogger, SiteSettingsListener {
     // External Access to the Image Loader
     var aztecImageLoader: AztecImageLoader? = null
 
@@ -427,11 +424,14 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
     @Inject lateinit var gutenbergKitPluginsFeature: GutenbergKitPluginsFeature
     @Inject lateinit var experimentalFeatures: ExperimentalFeatures
 
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
     @Inject lateinit var storePostViewModel: StorePostViewModel
     @Inject lateinit var storageUtilsViewModel: StorageUtilsViewModel
     @Inject lateinit var editorBloggingPromptsViewModel: EditorBloggingPromptsViewModel
     @Inject lateinit var editorJetpackSocialViewModel: EditorJetpackSocialViewModel
-    @Inject lateinit var editPostNavigationViewModel: EditPostNavigationViewModel
+    private lateinit var editPostNavigationViewModel: EditPostNavigationViewModel
+    private lateinit var editPostSettingsViewModel: EditPostSettingsViewModel
+    @Inject lateinit var editPostAuthViewModel: EditPostAuthViewModel
 
     private lateinit var siteModel: SiteModel
 
@@ -523,6 +523,8 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         (application as WordPress).component().inject(this)
+        initializeViewModels()
+
         setContentView(R.layout.new_edit_post_activity)
         val callback: OnBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -603,16 +605,23 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
         }
         sectionsPagerAdapter = SectionsPagerAdapter(fragmentManager)
 
-        // we need to make sure AT cookie is available when trying to edit post on private AT site
-        if (siteModel.isPrivateWPComAtomic && privateAtomicCookie.isCookieRefreshRequired()) {
-            showIfNecessary(fragmentManager)
-            dispatcher.dispatch(
-                SiteActionBuilder.newFetchPrivateAtomicCookieAction(
-                    SiteStore.FetchPrivateAtomicCookiePayload(siteModel.siteId)
+        // Ensure cookies are available for private sites, so that protected media loads successfully
+        when {
+            siteModel.isPrivateWPComAtomic && privateAtomicCookie.isCookieRefreshRequired() -> {
+                showIfNecessary(fragmentManager)
+                dispatcher.dispatch(
+                    SiteActionBuilder.newFetchPrivateAtomicCookieAction(
+                        SiteStore.FetchPrivateAtomicCookiePayload(siteModel.siteId)
+                    )
                 )
-            )
-        } else {
-            setupViewPager()
+            }
+            siteModel.isWPCom && !siteModel.isWPComAtomic && siteModel.isPrivate -> {
+                showIfNecessary(fragmentManager)
+                editPostAuthViewModel.fetchWpComCookies()
+            }
+            else -> {
+                setupViewPager()
+            }
         }
         ActivityId.trackLastActivity(ActivityId.POST_EDITOR)
         setupPrepublishingBottomSheetRunnable()
@@ -628,6 +637,11 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
         if (postConflictResolutionFeatureConfig.isEnabled()) {
             storePostViewModel.checkIfUpdatedPostVersionExists((editPostRepository), siteModel)
         }
+    }
+
+    private fun initializeViewModels() {
+        editPostNavigationViewModel = ViewModelProvider(this, viewModelFactory)[EditPostNavigationViewModel::class.java]
+        editPostSettingsViewModel = ViewModelProvider(this, viewModelFactory)[EditPostSettingsViewModel::class.java]
     }
 
     private fun initializeSiteModel(savedInstanceState: Bundle?): Boolean {
@@ -973,6 +987,36 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
             AppLog.d(AppLog.T.POSTS, "EditPostActivity: Current destination changed to $destination")
             updateUIForDestination(destination)
         }
+
+        editPostAuthViewModel.wpComCookieAuthState.observe(this) { authState ->
+            when (authState) {
+                is EditPostAuthViewModel.WpComCookieAuthState.Loading -> {
+                    showIfNecessary(supportFragmentManager)
+                }
+                is EditPostAuthViewModel.WpComCookieAuthState.Success -> {
+                    if (isShowing(supportFragmentManager)) {
+                        setupViewPager()
+                        dismissIfNecessary(supportFragmentManager)
+                    } else {
+                        setupViewPager()
+                    }
+                }
+                is EditPostAuthViewModel.WpComCookieAuthState.Error -> {
+                    if (isShowing(supportFragmentManager)) {
+                        setupViewPager()
+                        dismissIfNecessary(supportFragmentManager)
+                    }
+                    make(
+                        findViewById(R.id.editor_activity),
+                        R.string.media_accessing_failed,
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+                is EditPostAuthViewModel.WpComCookieAuthState.Idle -> {
+                    // Do nothing - wait for actual authentication to be triggered
+                }
+            }
+        }
     }
 
     /**
@@ -1147,6 +1191,13 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
                     getString(R.string.editor_updating_content_failed),
                     ToastUtils.Duration.SHORT
                 )
+            }
+        }
+
+        // Featured image management
+        editPostSettingsViewModel.clearFeaturedImage.observe(this) { event ->
+            event?.getContentIfNotHandled()?.let {
+                clearFeaturedImage()
             }
         }
     }
@@ -2222,13 +2273,6 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
         ActivityLauncher.openImageEditor(this, inputData)
     }
 
-    /*
-     * user clicked OK on a settings list dialog displayed from the settings fragment - pass the event
-     * along to the settings fragment
-     */
-    override fun onPostSettingsFragmentPositiveButtonClicked(dialog: PostSettingsListDialogFragment) {
-        editPostSettingsFragment?.onPostSettingsFragmentPositiveButtonClicked(dialog)
-    }
 
     interface OnPostUpdatedFromUIListener {
         fun onPostUpdatedFromUI(updatePostResult: UpdatePostResult)
@@ -2608,6 +2652,7 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
                 // Limited to Simple sites until application passwords are supported
                 "plugins" to (gutenbergKitPluginsFeature.isEnabled() && site.isWPCom),
                 "locale" to wpcomLocaleSlug,
+                "cookies" to editPostAuthViewModel.getCookiesForPrivateSites(site, privateAtomicCookie),
                 "webViewGlobals" to listOf(
                     WebViewGlobal(
                         "_currentSiteType",
@@ -3389,14 +3434,7 @@ class EditPostActivity : BaseAppCompatActivity(), EditorFragmentActivity, Editor
         }
     }
 
-    override fun onEditPostPublishedSettingsClick() {
-        editPostNavigationViewModel.navigateTo(EditPostDestination.PublishSettings)
-    }
-
-    /**
-     * EditorFragmentListener methods
-     */
-    override fun clearFeaturedImage() {
+    private fun clearFeaturedImage() {
         if (editorFragment is GutenbergEditorFragment) {
             (editorFragment as GutenbergEditorFragment).sendToJSFeaturedImageId(0)
         }
