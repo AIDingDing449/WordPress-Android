@@ -87,7 +87,7 @@ import org.wordpress.android.ui.plans.PlansActivity;
 import org.wordpress.android.ui.plugins.PluginBrowserActivity;
 import org.wordpress.android.ui.plugins.PluginDetailActivity;
 import org.wordpress.android.ui.plugins.PluginUtils;
-import org.wordpress.android.ui.posts.EditPostActivityConstants;
+import org.wordpress.android.ui.posts.EditorConstants;
 import org.wordpress.android.ui.posts.EditorLauncher;
 import org.wordpress.android.ui.posts.EditorLauncherParams;
 import org.wordpress.android.ui.posts.JetpackSecuritySettingsActivity;
@@ -402,7 +402,7 @@ public class ActivityLauncher {
         TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
         Intent mainActivityIntent = getMainActivityInNewStack(context);
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
             .isPage(false)
             .build();
 
@@ -418,7 +418,7 @@ public class ActivityLauncher {
         TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
         Intent mainActivityIntent = getMainActivityInNewStack(context);
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .postLocalId(localPostId)
                 .isPage(false)
                 .build();
@@ -462,12 +462,12 @@ public class ActivityLauncher {
             site.getSiteId()
         );
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .reblogPostTitle(post.getTitle())
                 .reblogPostQuote(post.getExcerpt())
                 .reblogPostImage(post.getFeaturedImage())
                 .reblogPostCitation(post.getUrl())
-                .reblogAction(EditPostActivityConstants.ACTION_REBLOG)
+                .reblogAction(EditorConstants.ACTION_REBLOG)
                 .build();
 
         Intent editorIntent = EditorLauncher.getInstance().createEditorIntent(activity, params);
@@ -988,7 +988,7 @@ public class ActivityLauncher {
             return;
         }
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
             .isPage(false)
             .isPromo(isPromo)
             .source(source)
@@ -1007,7 +1007,7 @@ public class ActivityLauncher {
             final int promptId,
             final EntryPoint entryPoint
     ) {
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .isPage(false)
                 .isPromo(isPromo)
                 .source(source)
@@ -1033,11 +1033,11 @@ public class ActivityLauncher {
         }
 
         intent.putExtra(WordPress.SITE, site);
-        intent.putExtra(EditPostActivityConstants.EXTRA_IS_PAGE, false);
-        intent.putExtra(EditPostActivityConstants.EXTRA_IS_PROMO, isPromo);
+        intent.putExtra(EditorConstants.EXTRA_IS_PAGE, false);
+        intent.putExtra(EditorConstants.EXTRA_IS_PROMO, isPromo);
         intent.putExtra(AnalyticsUtils.EXTRA_CREATION_SOURCE_DETAIL, source);
-        intent.putExtra(EditPostActivityConstants.EXTRA_PROMPT_ID, promptId);
-        intent.putExtra(EditPostActivityConstants.EXTRA_ENTRY_POINT, entryPoint);
+        intent.putExtra(EditorConstants.EXTRA_PROMPT_ID, promptId);
+        intent.putExtra(EditorConstants.EXTRA_ENTRY_POINT, entryPoint);
         activity.startActivityForResult(intent, RequestCodes.EDIT_POST);
     }
 
@@ -1047,7 +1047,7 @@ public class ActivityLauncher {
             return;
         }
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .postLocalId(post.getId())
                 .loadAutoSaveRevision(false)
                 .build();
@@ -1063,10 +1063,10 @@ public class ActivityLauncher {
             return;
         }
 
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
-            .postLocalId(post.getId())
-            .loadAutoSaveRevision(loadAutoSaveRevision)
-            .build();
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
+                .postLocalId(post.getId())
+                .loadAutoSaveRevision(loadAutoSaveRevision)
+                .build();
 
         Intent editorIntent = EditorLauncher.getInstance().createEditorIntent(activity, params);
         activity.startActivityForResult(editorIntent, RequestCodes.EDIT_POST);
@@ -1086,15 +1086,15 @@ public class ActivityLauncher {
         // PostModel objects can be quite large, since content field is not size restricted,
         // in order to avoid issues like TransactionTooLargeException it's better to pass the id of the post.
         // However, we still want to keep passing the SiteModel to avoid confusion around local & remote ids.
-        intent.putExtra(EditPostActivityConstants.EXTRA_POST_LOCAL_ID, postLocalId);
-        intent.putExtra(EditPostActivityConstants.EXTRA_LOAD_AUTO_SAVE_REVISION, loadAutoSaveRevision);
+        intent.putExtra(EditorConstants.EXTRA_POST_LOCAL_ID, postLocalId);
+        intent.putExtra(EditorConstants.EXTRA_LOAD_AUTO_SAVE_REVISION, loadAutoSaveRevision);
 
         activity.startActivityForResult(intent, RequestCodes.EDIT_POST);
     }
 
     public static void editPageForResult(@NonNull Fragment fragment, @NonNull SiteModel site,
                                          int pageLocalId, boolean loadAutoSaveRevision) {
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .postLocalId(pageLocalId)
                 .loadAutoSaveRevision(loadAutoSaveRevision)
                 .isPage(true)
@@ -1111,7 +1111,7 @@ public class ActivityLauncher {
 
     public static void editLandingPageForResult(@NonNull Fragment fragment, @NonNull SiteModel site, int homeLocalId,
                                                 boolean isNewSite) {
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
                 .postLocalId(homeLocalId)
                 .loadAutoSaveRevision(false)
                 .isPage(true)
@@ -1126,8 +1126,8 @@ public class ActivityLauncher {
     public static void editPageForResult(Intent intent, @NonNull Fragment fragment, @NonNull SiteModel site,
                                          int pageLocalId, boolean loadAutoSaveRevision, int requestCode) {
         intent.putExtra(WordPress.SITE, site);
-        intent.putExtra(EditPostActivityConstants.EXTRA_POST_LOCAL_ID, pageLocalId);
-        intent.putExtra(EditPostActivityConstants.EXTRA_LOAD_AUTO_SAVE_REVISION, loadAutoSaveRevision);
+        intent.putExtra(EditorConstants.EXTRA_POST_LOCAL_ID, pageLocalId);
+        intent.putExtra(EditorConstants.EXTRA_LOAD_AUTO_SAVE_REVISION, loadAutoSaveRevision);
         fragment.startActivityForResult(intent, requestCode);
     }
 
@@ -1139,14 +1139,14 @@ public class ActivityLauncher {
             @Nullable String template,
             @NonNull PagePostCreationSourcesDetail source
     ) {
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
-            .isPage(true)
-            .isPromo(false)
-            .pageTitle(title)
-            .pageContent(content)
-            .pageTemplate(template)
-            .source(source)
-            .build();
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
+                .isPage(true)
+                .isPromo(false)
+                .pageTitle(title)
+                .pageContent(content)
+                .pageTemplate(template)
+                .source(source)
+                .build();
 
         Intent intent = EditorLauncher.getInstance().createEditorIntent(activity, params);
         activity.startActivityForResult(intent, RequestCodes.EDIT_POST);
@@ -1159,7 +1159,7 @@ public class ActivityLauncher {
             @NonNull String content,
             @Nullable String template,
             @NonNull PagePostCreationSourcesDetail source) {
-        EditorLauncherParams params = new EditorLauncherParams.Builder(site)
+        EditorLauncherParams params = EditorLauncherParams.Builder.forSite(site)
             .isPage(true)
             .isPromo(false)
             .pageTitle(title)
