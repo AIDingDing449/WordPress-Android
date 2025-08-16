@@ -1,3 +1,5 @@
-25.9 :
-- L’icône « Moi » est désormais de la bonne couleur lorsque vous êtes en mode sombre.
-- Nous avons ajouté un avertissement qui vous indique lorsque votre code QR n’a pas pu être scanné. Aucune attente, aucune conjecture, aucun problème.
+26.1 :
+- L’écran Nouveaux abonnés affiche tous vos abonnés par e-mail et dans le Lecteur. Vous savez désormais qui lit votre contenu.
+- Les médias s’affichent désormais correctement sur les sites privés dans l’éditeur expérimental.
+- Amélioration des chargements de médias avec une meilleure authentification et de meilleures performances.
+- Correction de divers bugs de chargement et amélioration du traitement global des médias.

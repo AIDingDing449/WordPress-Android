@@ -1,3 +1,5 @@
-25.9:
-- Ikon "saya" kini menampilkan warna yang tepat saat Anda menggunakan mode gelap.
-- Kami menambahkan peringatan yang memberi tahu Anda jika pemindaian kode QR gagal. Cepat, pasti, dan mudah.
+26.1:
+- Layar Pelanggan baru menampilkan semua pelanggan email dan Pembaca, jadi Anda bisa tahu siapa saja yang mengikuti dan membaca konten Anda.
+- Media sekarang ditampilkan dengan baik pada situs pribadi dalam editor eksperimental.
+- Peningkatan unggahan media dengan autentikasi dan performa yang lebih baik.
+- Perbaikan berbagai masalah unggahan dan peningkatan penanganan media secara keseluruhan.

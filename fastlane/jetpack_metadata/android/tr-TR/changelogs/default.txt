@@ -1,3 +1,5 @@
-25.9:
-- Karanlık moddayken "ben" simgesi artık doğru renktedir.
-- QR kodu taramanızın başarısız olup olmadığını gösteren bir uyarı ekledik. Beklemek yok, tahmin etmek yok, sorun yok.
+26.1:
+- Yeni Aboneler ekranı tüm e-posta ve Okuyucu abonelerinizi gösterir, artık içeriğinizi kimin okuduğunu bilirsiniz.
+- Ortam artık deneysel düzenleyicide özel sitelerde düzgün şekilde görüntüleniyor.
+- Daha iyi kimlik doğrulama ve gelişmiş performans ile gelişmiş ortam yüklemeleri.
+- Çeşitli yükleme hataları düzeltildi ve genel ortam kullanımı iyileştirildi.

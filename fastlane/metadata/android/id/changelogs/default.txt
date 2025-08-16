@@ -1,4 +1,4 @@
-25.9:
-- Keyboard tidak lagi tumpang tindih dengan editor, artinya karya menakjubkan Anda akan terus terlihat.
-- Ikon "saya" kini menampilkan warna yang tepat saat Anda menggunakan mode gelap.
-- Kami menambahkan peringatan yang memberi tahu Anda jika pemindaian kode QR gagal. Cepat, pasti, dan mudah.
+26.1:
+- Media sekarang ditampilkan dengan baik pada situs pribadi dalam editor eksperimental.
+- Peningkatan unggahan media dengan autentikasi dan performa yang lebih baik.
+- Perbaikan berbagai masalah unggahan dan peningkatan penanganan media secara keseluruhan.
