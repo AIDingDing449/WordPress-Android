@@ -25,9 +25,11 @@ import javax.inject.Named
 class JetpackRestConnectionViewModel @Inject constructor(
     @Named(UI_THREAD) private val mainDispatcher: CoroutineDispatcher,
     @Named(BG_THREAD) private val bgDispatcher: CoroutineDispatcher,
-    private val selectedSiteRepository: SelectedSiteRepository,
+    selectedSiteRepository: SelectedSiteRepository,
     private val accountStore: AccountStore,
     private val jetpackInstaller: JetpackInstaller,
+    private val jetpackConnector: JetpackConnector,
+    private val jetpackModuleHelper: JetpackStatsModuleHelper,
     private val appLogWrapper: AppLogWrapper,
 ) : ScopedViewModel(mainDispatcher) {
     private val _currentStep = MutableStateFlow<ConnectionStep?>(null)
@@ -39,16 +41,22 @@ class JetpackRestConnectionViewModel @Inject constructor(
     private val _buttonType = MutableStateFlow<ButtonType?>(ButtonType.Start)
     val buttonType = _buttonType
 
-    data class StepState(
-        val status: ConnectionStatus = ConnectionStatus.NotStarted,
-        val errorType: ErrorType? = null,
-    )
-
     private val _stepStates = MutableStateFlow(initialStepStates)
     val stepStates = _stepStates
 
     private var job: Job? = null
     private var isWaitingForWPComLogin = false
+
+    private var connectionSource: ConnectionSource = DEFAULT_CONNECTION_SOURCE
+    private var site: SiteModel = selectedSiteRepository.getSelectedSite() ?: error("No site selected")
+
+    /**
+     * This will be used for analytics tracking
+     */
+    fun setConnectionSource(source: ConnectionSource) {
+        connectionSource = source
+        appLogWrapper.d(AppLog.T.API, "$TAG: Connection source set to: $source")
+    }
 
     private fun startConnectionJob(fromStep: ConnectionStep? = null) {
         val stepInfo = fromStep?.let { " from step: $it" } ?: ""
@@ -68,7 +76,6 @@ class JetpackRestConnectionViewModel @Inject constructor(
      */
     private fun onJobCompleted() {
         appLogWrapper.d(AppLog.T.API, "$TAG: Jetpack connection job completed")
-        job?.cancel()
         _buttonType.value = ButtonType.Done
         _currentStep.value = null
     }
@@ -77,8 +84,8 @@ class JetpackRestConnectionViewModel @Inject constructor(
         null -> ConnectionStep.LoginWpCom
         ConnectionStep.LoginWpCom -> ConnectionStep.InstallJetpack
         ConnectionStep.InstallJetpack -> ConnectionStep.ConnectSite
-        ConnectionStep.ConnectSite -> ConnectionStep.ConnectWpCom
-        ConnectionStep.ConnectWpCom -> ConnectionStep.Finalize
+        ConnectionStep.ConnectSite -> ConnectionStep.ConnectUser
+        ConnectionStep.ConnectUser -> ConnectionStep.Finalize
         ConnectionStep.Finalize -> null
     }
 
@@ -148,6 +155,14 @@ class JetpackRestConnectionViewModel @Inject constructor(
     fun onStartClick() {
         appLogWrapper.d(AppLog.T.API, "$TAG: Start clicked")
         startConnectionJob()
+    }
+
+    /**
+     * Connection flow completed successfully and user clicked the Done button
+     */
+    fun onDoneClick() {
+        appLogWrapper.d(AppLog.T.API, "$TAG: Done clicked")
+        setUiEvent(UiEvent.Done)
     }
 
     /**
@@ -238,7 +253,7 @@ class JetpackRestConnectionViewModel @Inject constructor(
         } catch (e: Exception) {
             appLogWrapper.e(AppLog.T.API, "$TAG: Error in step $step: ${e.message}")
             val errorType = when (e) {
-                is TimeoutCancellationException -> ErrorType.Timeout(e.message)
+                is TimeoutCancellationException -> ErrorType.Timeout
                 else -> ErrorType.Unknown(e.message)
             }
             updateStepStatus(
@@ -262,23 +277,23 @@ class JetpackRestConnectionViewModel @Inject constructor(
 
             ConnectionStep.ConnectSite -> {
                 appLogWrapper.d(AppLog.T.API, "$TAG: Connecting site")
-                // TODO
+                connectSite()
             }
 
-            ConnectionStep.ConnectWpCom -> {
+            ConnectionStep.ConnectUser -> {
                 appLogWrapper.d(AppLog.T.API, "$TAG: Connecting WordPress.com user")
-                // TODO
+                connectUser()
             }
 
             ConnectionStep.Finalize -> {
                 appLogWrapper.d(AppLog.T.API, "$TAG: Finalizing connection")
-                // TODO
+                finalize()
             }
         }
     }
 
     /**
-     * Starts the wp.com login flow if the user isn't logged into wp.com
+     * Step 1: Starts the wp.com login flow if the user isn't logged into wp.com
      */
     private fun loginWpCom() {
         if (accountStore.hasAccessToken()) {
@@ -319,10 +334,10 @@ class JetpackRestConnectionViewModel @Inject constructor(
     }
 
     /**
-     * Installs Jetpack to the current site if not already installed
+     * Step 2: Installs Jetpack to the current site if not already installed
      */
     private suspend fun installJetpack() {
-        val result = jetpackInstaller.installJetpack(getSite())
+        val result = jetpackInstaller.installJetpack(site)
 
         result.fold(
             onSuccess = { status ->
@@ -334,6 +349,7 @@ class JetpackRestConnectionViewModel @Inject constructor(
                             status = ConnectionStatus.Completed
                         )
                     }
+
                     PluginStatus.INACTIVE -> {
                         updateStepStatus(
                             step = ConnectionStep.InstallJetpack,
@@ -354,16 +370,87 @@ class JetpackRestConnectionViewModel @Inject constructor(
     }
 
     /**
-     * Gets the current site from the store
+     * Step 3: Connects the current site to Jetpack
      */
-    private fun getSite() =
-        selectedSiteRepository.getSelectedSite() ?: error("No site is currently selected in SelectedSiteRepository")
+    private suspend fun connectSite() {
+        val result = jetpackConnector.connectSite(site)
+        result.fold(
+            onSuccess = { wpComSiteId ->
+                // the local site won't have a siteId since it's self-hosted and previously unconnected to Jetpack,
+                // so assign it the siteId retrieved when connecting the site
+                site.siteId = wpComSiteId.toLong()
+                updateStepStatus(
+                    step = ConnectionStep.ConnectSite,
+                    status = ConnectionStatus.Completed
+                )
+            },
+            onFailure = {
+                updateStepStatus(
+                    step = ConnectionStep.ConnectSite,
+                    status = ConnectionStatus.Failed,
+                    error = ErrorType.ConnectSiteFailed
+                )
+            }
+        )
+    }
+
+    /**
+     * Step 4: Connects the user to the current site to Jetpack
+     */
+    private suspend fun connectUser() {
+        if (!accountStore.hasAccessToken()) {
+            updateStepStatus(
+                step = ConnectionStep.ConnectUser,
+                status = ConnectionStatus.Failed,
+                error = ErrorType.MissingAccessToken
+            )
+            return
+        }
+        val result = jetpackConnector.connectUser(
+            site = site,
+            accessToken = accountStore.accessToken!!
+        )
+        result.fold(
+            onSuccess = { wpComUserId ->
+                updateStepStatus(
+                    step = ConnectionStep.ConnectUser,
+                    status = ConnectionStatus.Completed
+                )
+            },
+            onFailure = {
+                updateStepStatus(
+                    step = ConnectionStep.ConnectUser,
+                    status = ConnectionStatus.Failed,
+                    error = ErrorType.ConnectUserFailed
+                )
+            }
+        )
+    }
+
+    /**
+     * Step 5: Finalize the connection by activating the stats module for the site
+     */
+    private suspend fun finalize() {
+        val result = jetpackModuleHelper.activateStatsModule(site)
+        if (result.isSuccess) {
+            updateStepStatus(
+                step = ConnectionStep.Finalize,
+                status = ConnectionStatus.Completed
+            )
+        } else {
+            updateStepStatus(
+                step = ConnectionStep.Finalize,
+                status = ConnectionStatus.Failed,
+                error = ErrorType.ActivateStatsFailed
+            )
+        }
+    }
 
     sealed class ConnectionStep {
         data object LoginWpCom : ConnectionStep()
         data object InstallJetpack : ConnectionStep()
         data object ConnectSite : ConnectionStep()
-        data object ConnectWpCom : ConnectionStep()
+        data object ConnectUser : ConnectionStep()
         data object Finalize : ConnectionStep()
     }
 
@@ -376,6 +463,7 @@ class JetpackRestConnectionViewModel @Inject constructor(
 
     sealed class UiEvent {
         data object StartWPComLogin : UiEvent()
+        data object Done : UiEvent()
         data object Close : UiEvent()
         data object ShowCancelConfirmation : UiEvent()
     }
@@ -385,8 +473,12 @@ class JetpackRestConnectionViewModel @Inject constructor(
         data object InstallJetpackFailed : ErrorType()
         data object InstallJetpackInactive : ErrorType()
         data object ConnectWpComFailed : ErrorType()
-        data class Timeout(override val message: String? = null) : ErrorType(message)
-        data class Offline(override val message: String? = null) : ErrorType(message)
+        data object ConnectSiteFailed : ErrorType()
+        data object ConnectUserFailed : ErrorType()
+        data object ActivateStatsFailed : ErrorType()
+        data object MissingAccessToken : ErrorType()
+        data object Timeout : ErrorType()
+        data object Offline : ErrorType()
         data class Unknown(override val message: String? = null) : ErrorType(message)
     }
 
@@ -396,11 +488,22 @@ class JetpackRestConnectionViewModel @Inject constructor(
         data object Retry : ButtonType()
     }
 
+    data class StepState(
+        val status: ConnectionStatus = ConnectionStatus.NotStarted,
+        val errorType: ErrorType? = null,
+    )
+
+    enum class ConnectionSource {
+        STATS,
+        NOTIFS
+    }
+
     companion object {
         private const val TAG = "JetpackRestConnectionViewModel"
         private const val LIMIT_VERSION = "14.2"
         private const val STEP_TIMEOUT_MS = 45 * 1000L
         private const val UI_DELAY_MS = 1000L
+        val DEFAULT_CONNECTION_SOURCE = ConnectionSource.STATS
 
         /**
          * Requirements:
@@ -419,7 +522,7 @@ class JetpackRestConnectionViewModel @Inject constructor(
             ConnectionStep.LoginWpCom to StepState(),
             ConnectionStep.InstallJetpack to StepState(),
             ConnectionStep.ConnectSite to StepState(),
-            ConnectionStep.ConnectWpCom to StepState(),
+            ConnectionStep.ConnectUser to StepState(),
             ConnectionStep.Finalize to StepState()
         )
     }
