@@ -33,6 +33,8 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
@@ -169,10 +171,8 @@ import org.wordpress.android.ui.posts.reactnative.ReactNativeRequestHandler
 import org.wordpress.android.ui.posts.sharemessage.EditJetpackSocialShareMessageActivity
 import org.wordpress.android.ui.posts.sharemessage.EditJetpackSocialShareMessageActivity.Companion.createIntent
 import org.wordpress.android.ui.prefs.AppPrefs
-import org.wordpress.android.ui.prefs.experimentalfeatures.ExperimentalFeatures.Feature
 import org.wordpress.android.ui.prefs.SiteSettingsInterface
 import org.wordpress.android.ui.prefs.SiteSettingsInterface.SiteSettingsListener
-import org.wordpress.android.ui.prefs.experimentalfeatures.ExperimentalFeatures
 import org.wordpress.android.ui.reader.utils.ReaderUtilsWrapper
 import org.wordpress.android.ui.suggestion.SuggestionActivity
 import org.wordpress.android.ui.suggestion.SuggestionType
@@ -208,7 +208,6 @@ import org.wordpress.android.util.analytics.AnalyticsTrackerWrapper
 import org.wordpress.android.util.analytics.AnalyticsUtils
 import org.wordpress.android.util.analytics.AnalyticsUtils.BlockEditorEnabledSource
 import org.wordpress.android.util.config.ContactSupportFeatureConfig
-import org.wordpress.android.util.config.GutenbergKitFeature
 import org.wordpress.android.util.config.GutenbergKitPluginsFeature
 import org.wordpress.android.util.config.PostConflictResolutionFeatureConfig
 import org.wordpress.android.util.extensions.setLiftOnScrollTargetViewIdAndRequestLayout
@@ -378,9 +377,7 @@ class GutenbergKitActivity : BaseAppCompatActivity(), EditorImageSettingsListene
 
     @Inject lateinit var postConflictResolutionFeatureConfig: PostConflictResolutionFeatureConfig
 
-    @Inject lateinit var gutenbergKitFeature: GutenbergKitFeature
     @Inject lateinit var gutenbergKitPluginsFeature: GutenbergKitPluginsFeature
-    @Inject lateinit var experimentalFeatures: ExperimentalFeatures
 
     @Inject lateinit var activityNavigator: ActivityNavigator
 
@@ -490,6 +487,10 @@ class GutenbergKitActivity : BaseAppCompatActivity(), EditorImageSettingsListene
         }
 
         setContentView(R.layout.new_edit_post_activity)
+
+        // Handle edge-to-edge with IME insets for keyboard management
+        setupEdgeToEdgeWithImeInsets()
+
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (isModalDialogOpen) {
@@ -612,6 +613,30 @@ class GutenbergKitActivity : BaseAppCompatActivity(), EditorImageSettingsListene
         // check if post content needs updating
         if (postConflictResolutionFeatureConfig.isEnabled()) {
             storePostViewModel.checkIfUpdatedPostVersionExists((editPostRepository), siteModel)
+        }
+    }
+
+    /**
+     * Enables edge-to-edge display with proper IME (keyboard) inset handling.
+     * This ensures the editor toolbar remains visible above the keyboard on all devices.
+     */
+    private fun setupEdgeToEdgeWithImeInsets() {
+        val rootView = findViewById<View>(R.id.editor_activity)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+
+            // Apply system bar insets to keep content within safe areas
+            view.setPadding(
+                systemBarsInsets.left,
+                systemBarsInsets.top,
+                systemBarsInsets.right,
+                // Use IME insets for bottom padding when keyboard is visible, otherwise system bars
+                maxOf(systemBarsInsets.bottom, imeInsets.bottom)
+            )
+
+            WindowInsetsCompat.CONSUMED
         }
     }
 
@@ -2279,9 +2304,7 @@ class GutenbergKitActivity : BaseAppCompatActivity(), EditorImageSettingsListene
 
             val featureConfig = GutenbergKitSettingsBuilder.FeatureConfig(
                 isPluginsFeatureEnabled = gutenbergKitPluginsFeature.isEnabled(),
-                isThemeStylesFeatureEnabled = experimentalFeatures.isEnabled(
-                    Feature.EXPERIMENTAL_BLOCK_EDITOR_THEME_STYLES
-                )
+                isThemeStylesFeatureEnabled = siteSettings?.useThemeStyles ?: true
             )
 
             val appConfig = GutenbergKitSettingsBuilder.AppConfig(
