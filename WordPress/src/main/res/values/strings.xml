@@ -993,6 +993,9 @@
     <string name="network_requests_disable_tracking_title">Disable Tracking?</string>
     <string name="network_requests_disable_tracking_description">Existing logs will expire based on the retention period. To clear logs now, tap \"View Network Requests\" and use the trash icon before disabling.</string>
     <string name="network_requests_disable">Disable</string>
+    <string name="experimental_post_types">Post Types</string>
+    <string name="experimental_post_types_description">Enable experimental post types screen</string>
+    <string name="post_types_screen_title">Post Types</string>
 
     <!-- Debug settings -->
     <string name="preference_open_debug_settings" translatable="false">Debug Settings</string>
@@ -2751,7 +2754,9 @@
     <string name="people_dropdown_item_subscribers">Subscribers</string>
     <string name="people_dropdown_item_email_subscribers">Email Subscribers</string>
     <string name="people_dropdown_item_viewers">Viewers</string>
-    <string name="people_empty_list_filtered_users">No users yet</string>
+    <string name="people_empty_list_filtered_users">No users - yet!</string>
+    <string name="people_empty_list_filtered_users_subtitle">Why not add one?</string>
+    <string name="people_empty_list_filtered_users_button">Add user</string>
     <string name="people_empty_list_filtered_subscribers">No subscribers yet</string>
     <string name="people_empty_list_filtered_email_subscribers">No email subscribers yet</string>
     <string name="people_empty_list_filtered_viewers">No viewers yet</string>
