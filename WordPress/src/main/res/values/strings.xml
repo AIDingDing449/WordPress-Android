@@ -1387,6 +1387,11 @@
     <string name="stats_visitors">Visitors</string>
     <string name="stats_likes">Likes</string>
     <string name="stats_comments" translatable="false">@string/comments</string>
+    <string name="stats_chart_type_lines">Lines</string>
+    <string name="stats_chart_type_bars">Bars</string>
+    <!-- Average XX -->
+    <string name="stats_weekly_average">avg %1$s</string>
+    <string name="more_options">More options</string>
 
     <!-- stats: labels for the views -->
     <string name="stats_view_countries">Countries</string>
@@ -3050,16 +3055,6 @@
     <string name="account_closure_dialog_error_active_memberships">This user account cannot be closed while it has active purchases.</string>
     <string name="account_closure_dialog_error_unknown">An error occurred while closing account.</string>
     <string name="account_closure_dialog_success_message">Account closed.</string>
-
-    <!-- Plans -->
-    <string name="plan">Plan</string>
-    <string name="plans">Plans</string>
-    <string name="plans_loading_error_network_title">No connection</string>
-    <string name="plans_loading_error_no_plans_title">Cannot load Plans</string>
-    <string name="plans_loading_error_no_plans_subtitle">We cannot load Plans at the moment. Please try again later.</string>
-    <string name="plans_loading_error_no_cache_subtitle">An internet connection is required to view Plans.</string>
-    <string name="plans_loading_error_with_cache_subtitle">An internet connection is required to view Plans, so details may be out-of-date.</string>
-    <string name="plans_loading_error_with_cache_button">View Plans Anyway</string>
 
     <!-- gravatar -->
     <string name="error_cropping_image">Error cropping the image</string>
