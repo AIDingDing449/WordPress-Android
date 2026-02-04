@@ -4,24 +4,37 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -30,6 +43,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,14 +55,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.wordpress.android.R
 import org.wordpress.android.ui.compose.theme.AppThemeM3
 import org.wordpress.android.ui.main.BaseAppCompatActivity
+import org.wordpress.android.ui.newstats.components.AddStatsCardBottomSheet
+import org.wordpress.android.ui.newstats.components.CardPosition
 import org.wordpress.android.ui.newstats.countries.CountriesCard
 import org.wordpress.android.ui.newstats.countries.CountriesDetailActivity
 import org.wordpress.android.ui.newstats.countries.CountriesViewModel
@@ -126,12 +147,23 @@ private fun NewStatsScreen(
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = { showPeriodMenu = true }) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clickable { showPeriodMenu = true }
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = selectedPeriod.getDisplayLabel(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = stringResource(
                                     R.string.stats_period_selector_content_description
-                                )
+                                ),
+                                modifier = Modifier.padding(start = 4.dp)
                             )
                         }
                         StatsPeriodMenu(
@@ -195,12 +227,14 @@ private fun TrafficTabContent(
     viewsStatsViewModel: ViewsStatsViewModel,
     todaysStatsViewModel: TodaysStatsViewModel = viewModel(),
     mostViewedViewModel: MostViewedViewModel = viewModel(),
-    countriesViewModel: CountriesViewModel = viewModel()
+    countriesViewModel: CountriesViewModel = viewModel(),
+    newStatsViewModel: NewStatsViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val todaysStatsUiState by todaysStatsViewModel.uiState.collectAsState()
     val viewsStatsUiState by viewsStatsViewModel.uiState.collectAsState()
-    val mostViewedUiState by mostViewedViewModel.uiState.collectAsState()
+    val postsUiState by mostViewedViewModel.postsUiState.collectAsState()
+    val referrersUiState by mostViewedViewModel.referrersUiState.collectAsState()
     val countriesUiState by countriesViewModel.uiState.collectAsState()
     val selectedPeriod by viewsStatsViewModel.selectedPeriod.collectAsState()
     val isTodaysStatsRefreshing by todaysStatsViewModel.isRefreshing.collectAsState()
@@ -211,10 +245,64 @@ private fun TrafficTabContent(
         isMostViewedRefreshing || isCountriesRefreshing
     val pullToRefreshState = rememberPullToRefreshState()
 
+    // Card configuration state
+    val visibleCards by newStatsViewModel.visibleCards.collectAsState()
+    val hiddenCards by newStatsViewModel.hiddenCards.collectAsState()
+    val isNetworkAvailable by newStatsViewModel.isNetworkAvailable.collectAsState()
+    var showAddCardSheet by remember { mutableStateOf(false) }
+    val addCardSheetState = rememberModalBottomSheetState()
+
     // Propagate period changes to the MostViewedViewModel and CountriesViewModel
     LaunchedEffect(selectedPeriod) {
         mostViewedViewModel.onPeriodChanged(selectedPeriod)
         countriesViewModel.onPeriodChanged(selectedPeriod)
+    }
+
+    if (showAddCardSheet) {
+        AddStatsCardBottomSheet(
+            sheetState = addCardSheetState,
+            availableCards = hiddenCards,
+            onDismiss = { showAddCardSheet = false },
+            onCardSelected = { cardType ->
+                newStatsViewModel.addCard(cardType)
+            }
+        )
+    }
+
+    // Track whether to show the no-connection screen
+    // Once user retries or network becomes available, show cards instead
+    var showNoConnectionScreen by remember { mutableStateOf(!isNetworkAvailable) }
+
+    // React to network availability changes
+    LaunchedEffect(isNetworkAvailable) {
+        if (isNetworkAvailable && showNoConnectionScreen) {
+            // Network became available while on no-connection screen - auto-load
+            showNoConnectionScreen = false
+            todaysStatsViewModel.loadData()
+            viewsStatsViewModel.loadData()
+            mostViewedViewModel.loadData()
+            countriesViewModel.loadData()
+        } else if (!isNetworkAvailable && !showNoConnectionScreen) {
+            // Network became unavailable while viewing cards - show no-connection screen
+            showNoConnectionScreen = true
+        }
+    }
+
+    // Show no connection screen only when network is unavailable
+    if (showNoConnectionScreen) {
+        NoConnectionContent(
+            onRetry = {
+                val isAvailable = newStatsViewModel.checkNetworkStatus()
+                if (isAvailable) {
+                    showNoConnectionScreen = false
+                    todaysStatsViewModel.loadData()
+                    viewsStatsViewModel.loadData()
+                    mostViewedViewModel.loadData()
+                    countriesViewModel.loadData()
+                }
+            }
+        )
+        return
     }
 
     PullToRefreshBox(
@@ -222,6 +310,7 @@ private fun TrafficTabContent(
         isRefreshing = isRefreshing,
         state = pullToRefreshState,
         onRefresh = {
+            newStatsViewModel.checkNetworkStatus()
             todaysStatsViewModel.refresh()
             viewsStatsViewModel.refresh()
             mostViewedViewModel.refresh()
@@ -241,47 +330,198 @@ private fun TrafficTabContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            TodaysStatsCard(uiState = todaysStatsUiState)
-            ViewsStatsCard(
-                uiState = viewsStatsUiState,
-                onChartTypeChanged = viewsStatsViewModel::onChartTypeChanged,
-                onRetry = viewsStatsViewModel::onRetry
-            )
-            MostViewedCard(
-                uiState = mostViewedUiState,
-                onDataSourceChanged = mostViewedViewModel::onDataSourceChanged,
-                onShowAllClick = {
-                    val detailData = mostViewedViewModel.getDetailData()
-                    MostViewedDetailActivity.start(
-                        context = context,
-                        dataSource = detailData.dataSource,
-                        items = detailData.items,
-                        totalViews = detailData.totalViews,
-                        totalViewsChange = detailData.totalViewsChange,
-                        totalViewsChangePercent = detailData.totalViewsChangePercent,
-                        dateRange = detailData.dateRange
+            if (visibleCards.isEmpty()) {
+                // Empty state message
+                val emptyStateMessage = stringResource(R.string.stats_no_cards_message)
+                Text(
+                    text = emptyStateMessage,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp)
+                        .semantics { contentDescription = emptyStateMessage },
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // Memoize card positions to avoid recalculation on every recomposition
+            val cardPositions = remember(visibleCards) {
+                visibleCards.mapIndexed { index, _ ->
+                    CardPosition(index = index, totalCards = visibleCards.size)
+                }
+            }
+
+            // Dynamic card rendering based on configuration
+            visibleCards.forEachIndexed { index, cardType ->
+                val cardPosition = cardPositions[index]
+                when (cardType) {
+                    StatsCardType.TODAYS_STATS -> TodaysStatsCard(
+                        uiState = todaysStatsUiState,
+                        onRemoveCard = { newStatsViewModel.removeCard(cardType) },
+                        cardPosition = cardPosition,
+                        onMoveUp = { newStatsViewModel.moveCardUp(cardType) },
+                        onMoveToTop = { newStatsViewModel.moveCardToTop(cardType) },
+                        onMoveDown = { newStatsViewModel.moveCardDown(cardType) },
+                        onMoveToBottom = { newStatsViewModel.moveCardToBottom(cardType) }
                     )
-                },
-                onRetry = mostViewedViewModel::onRetry
-            )
-            CountriesCard(
-                uiState = countriesUiState,
-                onShowAllClick = {
-                    val detailData = countriesViewModel.getDetailData()
-                    CountriesDetailActivity.start(
-                        context = context,
-                        countries = detailData.countries,
-                        mapData = detailData.mapData,
-                        minViews = detailData.minViews,
-                        maxViews = detailData.maxViews,
-                        totalViews = detailData.totalViews,
-                        totalViewsChange = detailData.totalViewsChange,
-                        totalViewsChangePercent = detailData.totalViewsChangePercent,
-                        dateRange = detailData.dateRange
+                    StatsCardType.VIEWS_STATS -> ViewsStatsCard(
+                        uiState = viewsStatsUiState,
+                        onChartTypeChanged = viewsStatsViewModel::onChartTypeChanged,
+                        onRetry = viewsStatsViewModel::onRetry,
+                        onRemoveCard = { newStatsViewModel.removeCard(cardType) },
+                        cardPosition = cardPosition,
+                        onMoveUp = { newStatsViewModel.moveCardUp(cardType) },
+                        onMoveToTop = { newStatsViewModel.moveCardToTop(cardType) },
+                        onMoveDown = { newStatsViewModel.moveCardDown(cardType) },
+                        onMoveToBottom = { newStatsViewModel.moveCardToBottom(cardType) }
                     )
-                },
-                onRetry = countriesViewModel::onRetry
+                    StatsCardType.MOST_VIEWED_POSTS_AND_PAGES -> MostViewedCard(
+                        uiState = postsUiState,
+                        cardType = cardType,
+                        onShowAllClick = {
+                            val detailData = mostViewedViewModel.getPostsDetailData()
+                            MostViewedDetailActivity.start(
+                                context = context,
+                                cardType = detailData.cardType,
+                                items = detailData.items,
+                                totalViews = detailData.totalViews,
+                                totalViewsChange = detailData.totalViewsChange,
+                                totalViewsChangePercent = detailData.totalViewsChangePercent,
+                                dateRange = detailData.dateRange
+                            )
+                        },
+                        onRetry = mostViewedViewModel::onRetryPosts,
+                        onRemoveCard = { newStatsViewModel.removeCard(cardType) },
+                        cardPosition = cardPosition,
+                        onMoveUp = { newStatsViewModel.moveCardUp(cardType) },
+                        onMoveToTop = { newStatsViewModel.moveCardToTop(cardType) },
+                        onMoveDown = { newStatsViewModel.moveCardDown(cardType) },
+                        onMoveToBottom = { newStatsViewModel.moveCardToBottom(cardType) }
+                    )
+                    StatsCardType.MOST_VIEWED_REFERRERS -> MostViewedCard(
+                        uiState = referrersUiState,
+                        cardType = cardType,
+                        onShowAllClick = {
+                            val detailData = mostViewedViewModel.getReferrersDetailData()
+                            MostViewedDetailActivity.start(
+                                context = context,
+                                cardType = detailData.cardType,
+                                items = detailData.items,
+                                totalViews = detailData.totalViews,
+                                totalViewsChange = detailData.totalViewsChange,
+                                totalViewsChangePercent = detailData.totalViewsChangePercent,
+                                dateRange = detailData.dateRange
+                            )
+                        },
+                        onRetry = mostViewedViewModel::onRetryReferrers,
+                        onRemoveCard = { newStatsViewModel.removeCard(cardType) },
+                        cardPosition = cardPosition,
+                        onMoveUp = { newStatsViewModel.moveCardUp(cardType) },
+                        onMoveToTop = { newStatsViewModel.moveCardToTop(cardType) },
+                        onMoveDown = { newStatsViewModel.moveCardDown(cardType) },
+                        onMoveToBottom = { newStatsViewModel.moveCardToBottom(cardType) }
+                    )
+                    StatsCardType.COUNTRIES -> CountriesCard(
+                        uiState = countriesUiState,
+                        onShowAllClick = {
+                            val detailData = countriesViewModel.getDetailData()
+                            CountriesDetailActivity.start(
+                                context = context,
+                                countries = detailData.countries,
+                                mapData = detailData.mapData,
+                                minViews = detailData.minViews,
+                                maxViews = detailData.maxViews,
+                                totalViews = detailData.totalViews,
+                                totalViewsChange = detailData.totalViewsChange,
+                                totalViewsChangePercent = detailData.totalViewsChangePercent,
+                                dateRange = detailData.dateRange
+                            )
+                        },
+                        onRetry = countriesViewModel::onRetry,
+                        onRemoveCard = { newStatsViewModel.removeCard(cardType) },
+                        cardPosition = cardPosition,
+                        onMoveUp = { newStatsViewModel.moveCardUp(cardType) },
+                        onMoveToTop = { newStatsViewModel.moveCardToTop(cardType) },
+                        onMoveDown = { newStatsViewModel.moveCardDown(cardType) },
+                        onMoveToBottom = { newStatsViewModel.moveCardToBottom(cardType) }
+                    )
+                }
+            }
+
+            // Add Card Button
+            AddCardButton(
+                onClick = { showAddCardSheet = true },
+                modifier = Modifier.padding(16.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun AddCardButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(stringResource(R.string.stats_add_card_title))
+    }
+}
+
+@Composable
+private fun NoConnectionContent(
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_wifi_off_24px),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = CircleShape
+                    )
+                    .padding(12.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = stringResource(R.string.no_connection_error_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.no_connection_error_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onRetry) {
+                Text(stringResource(R.string.retry))
+            }
         }
     }
 }
@@ -332,6 +572,17 @@ private fun StatsPeriodMenu(
                 null
             }
         )
+    }
+}
+
+@Composable
+private fun StatsPeriod.getDisplayLabel(): String {
+    return when (this) {
+        is StatsPeriod.Custom -> {
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d")
+            "${startDate.format(formatter)} - ${endDate.format(formatter)}"
+        }
+        else -> stringResource(id = labelResId)
     }
 }
 
