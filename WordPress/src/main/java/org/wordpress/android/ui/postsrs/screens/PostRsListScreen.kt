@@ -1,5 +1,6 @@
 package org.wordpress.android.ui.postsrs.screens
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -22,6 +24,7 @@ import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -40,8 +43,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.wordpress.android.R
+import org.wordpress.android.ui.postsrs.ConfirmationDialogState
+import org.wordpress.android.ui.postsrs.PendingConfirmation
 import org.wordpress.android.ui.postsrs.PostRsListTab
 import org.wordpress.android.ui.postsrs.PostRsListViewModel.Companion.MIN_SEARCH_QUERY_LENGTH
+import org.wordpress.android.ui.postsrs.PostRsMenuAction
 import org.wordpress.android.ui.postsrs.PostTabUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +56,7 @@ fun PostRsListScreen(
     tabStates: Map<PostRsListTab, PostTabUiState>,
     isSearchActive: Boolean,
     searchQuery: String,
+    confirmationDialog: ConfirmationDialogState,
     onSearchOpen: () -> Unit,
     onSearchQueryChanged: (String, PostRsListTab) -> Unit,
     onSearchClose: (PostRsListTab) -> Unit,
@@ -58,6 +65,7 @@ fun PostRsListScreen(
     onLoadMore: (PostRsListTab) -> Unit,
     onNavigateBack: () -> Unit,
     onPostClick: (Long) -> Unit,
+    onPostMenuAction: (Long, PostRsMenuAction) -> Unit,
     onCreatePost: () -> Unit
 ) {
     val tabs = PostRsListTab.entries
@@ -74,83 +82,46 @@ fun PostRsListScreen(
                     if (isSearchActive) {
                         TextField(
                             value = searchQuery,
-                            onValueChange = { query ->
-                                onSearchQueryChanged(
-                                    query, activeTab
-                                )
-                            },
+                            onValueChange = { query -> onSearchQueryChanged(query, activeTab) },
                             placeholder = {
-                                Text(
-                                    stringResource(
-                                        R.string
-                                            .post_list_search_prompt
-                                    )
-                                )
+                                Text(stringResource(R.string.post_list_search_prompt))
                             },
                             singleLine = true,
-                            keyboardOptions =
-                                KeyboardOptions.Default.copy(
-                                    imeAction = ImeAction.Search
-                                ),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Search
+                            ),
                             keyboardActions = KeyboardActions(
-                                onSearch = {
-                                    focusManager.clearFocus()
-                                }
+                                onSearch = { focusManager.clearFocus() }
                             ),
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor =
-                                    Color.Transparent,
-                                unfocusedContainerColor =
-                                    Color.Transparent,
-                                focusedIndicatorColor =
-                                    Color.Transparent,
-                                unfocusedIndicatorColor =
-                                    Color.Transparent
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
                             ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester)
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
                         )
                     } else {
-                        Text(
-                            text = stringResource(
-                                R.string.my_site_btn_blog_posts
-                            )
-                        )
+                        Text(text = stringResource(R.string.my_site_btn_blog_posts))
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (isSearchActive) {
-                            onSearchClose(activeTab)
-                        } else {
-                            onNavigateBack()
-                        }
+                        if (isSearchActive) onSearchClose(activeTab) else onNavigateBack()
                     }) {
                         Icon(
-                            Icons.AutoMirrored.Filled
-                                .ArrowBack,
-                            contentDescription =
-                                stringResource(
-                                    R.string.back
-                                )
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
                 actions = {
                     if (isSearchActive) {
                         if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = {
-                                onSearchQueryChanged(
-                                    "", activeTab
-                                )
-                            }) {
+                            IconButton(onClick = { onSearchQueryChanged("", activeTab) }) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription =
-                                        stringResource(
-                                            R.string.clear
-                                        )
+                                    contentDescription = stringResource(R.string.clear)
                                 )
                             }
                         }
@@ -158,11 +129,7 @@ fun PostRsListScreen(
                         IconButton(onClick = onSearchOpen) {
                             Icon(
                                 Icons.Default.Search,
-                                contentDescription =
-                                    stringResource(
-                                        R.string
-                                            .post_list_search_prompt
-                                    )
+                                contentDescription = stringResource(R.string.post_list_search_prompt)
                             )
                         }
                     }
@@ -170,33 +137,23 @@ fun PostRsListScreen(
             )
 
             if (isSearchActive) {
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreatePost,
-                containerColor =
-                    MaterialTheme.colorScheme.onSurface,
-                contentColor =
-                    MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = MaterialTheme.colorScheme.surface
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = stringResource(
-                        R.string.posts_empty_list_button
-                    )
+                    contentDescription = stringResource(R.string.posts_empty_list_button)
                 )
             }
         }
     ) { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
             if (!isSearchActive) {
                 PrimaryScrollableTabRow(
                     selectedTabIndex = pagerState.settledPage,
@@ -204,31 +161,18 @@ fun PostRsListScreen(
                 ) {
                     tabs.forEachIndexed { index, tab ->
                         Tab(
-                            selected =
-                                pagerState.settledPage == index,
+                            selected = pagerState.settledPage == index,
                             onClick = {
-                                coroutineScope.launch {
-                                    pagerState
-                                        .animateScrollToPage(
-                                            index
-                                        )
-                                }
+                                coroutineScope.launch { pagerState.animateScrollToPage(index) }
                             },
-                            text = {
-                                Text(
-                                    text = stringResource(
-                                        tab.labelResId
-                                    )
-                                )
-                            }
+                            text = { Text(text = stringResource(tab.labelResId)) }
                         )
                     }
                 }
             }
 
             LaunchedEffect(pagerState) {
-                snapshotFlow { pagerState.settledPage }
-                    .collect { page -> onInitTab(tabs[page]) }
+                snapshotFlow { pagerState.settledPage }.collect { page -> onInitTab(tabs[page]) }
             }
 
             HorizontalPager(
@@ -237,25 +181,63 @@ fun PostRsListScreen(
                 userScrollEnabled = !isSearchActive
             ) { page ->
                 val tab = tabs[page]
-                val tabState = tabStates[tab]
-                    ?: PostTabUiState(isLoading = true)
+                val tabState = tabStates[tab] ?: PostTabUiState(isLoading = true)
 
                 PostRsTabListScreen(
                     state = tabState,
-                    emptyMessageResId =
-                        tab.emptyMessageResId,
-                    isSearchIdle = isSearchActive
-                        && searchQuery.length
-                        < MIN_SEARCH_QUERY_LENGTH,
-                    isSearching = isSearchActive
-                        && searchQuery.length
-                        >= MIN_SEARCH_QUERY_LENGTH,
+                    emptyMessageResId = tab.emptyMessageResId,
+                    isSearchIdle = isSearchActive && searchQuery.length < MIN_SEARCH_QUERY_LENGTH,
+                    isSearching = isSearchActive && searchQuery.length >= MIN_SEARCH_QUERY_LENGTH,
                     onRefresh = { onRefreshTab(tab) },
                     onLoadMore = { onLoadMore(tab) },
                     onPostClick = onPostClick,
+                    onPostMenuAction = onPostMenuAction,
                     onCreatePost = onCreatePost
                 )
             }
         }
     }
+
+    when (confirmationDialog.pending) {
+        is PendingConfirmation.Trash -> ConfirmationDialog(
+            titleResId = R.string.trash,
+            messageResId = R.string.post_rs_confirm_trash_message,
+            onConfirm = confirmationDialog.onConfirm,
+            onDismiss = confirmationDialog.onDismiss
+        )
+        is PendingConfirmation.Delete -> ConfirmationDialog(
+            titleResId = R.string.delete,
+            messageResId = R.string.post_rs_confirm_delete_message,
+            isDestructive = true,
+            onConfirm = confirmationDialog.onConfirm,
+            onDismiss = confirmationDialog.onDismiss
+        )
+        null -> {}
+    }
+}
+
+@Composable
+private fun ConfirmationDialog(
+    @StringRes titleResId: Int,
+    @StringRes messageResId: Int,
+    isDestructive: Boolean = false,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(titleResId)) },
+        text = { Text(stringResource(messageResId)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    stringResource(titleResId),
+                    color = if (isDestructive) MaterialTheme.colorScheme.error else Color.Unspecified
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
 }
