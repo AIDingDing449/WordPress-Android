@@ -205,6 +205,8 @@ class PostRsListViewModel @Inject constructor(
         val post = findPost(remotePostId)
 
         when (action) {
+            PostRsMenuAction.SETTINGS ->
+                _events.trySend(PostRsListEvent.OpenPostSettings(remotePostId))
             PostRsMenuAction.VIEW -> {
                 val url = post?.link
                 if (url == null) {
@@ -479,6 +481,7 @@ class PostRsListViewModel @Inject constructor(
     ): List<PostRsMenuAction> = buildList {
         when (tab) {
             PostRsListTab.PUBLISHED -> {
+                add(PostRsMenuAction.SETTINGS)
                 add(PostRsMenuAction.VIEW)
                 add(PostRsMenuAction.READ)
                 add(PostRsMenuAction.MOVE_TO_DRAFT)
@@ -487,21 +490,27 @@ class PostRsListViewModel @Inject constructor(
                 if (!hasPassword && blazeFeatureUtils.isSiteBlazeEligible(site)) {
                     add(PostRsMenuAction.BLAZE)
                 }
-                if (SiteUtils.isAccessedViaWPComRest(site) && site.hasCapabilityViewStats) {
+                if (SiteUtils.isAccessedViaWPComRest(site) &&
+                    site.hasCapabilityViewStats
+                ) {
                     add(PostRsMenuAction.STATS)
                 }
                 if (commentsOpen) add(PostRsMenuAction.COMMENTS)
                 add(PostRsMenuAction.TRASH)
             }
             PostRsListTab.DRAFTS -> {
+                add(PostRsMenuAction.SETTINGS)
                 add(PostRsMenuAction.VIEW)
                 add(PostRsMenuAction.READ)
-                add(PostRsMenuAction.PUBLISH)
+                if (site.hasCapabilityPublishPosts) {
+                    add(PostRsMenuAction.PUBLISH)
+                }
                 add(PostRsMenuAction.DUPLICATE)
                 add(PostRsMenuAction.SHARE)
                 add(PostRsMenuAction.TRASH)
             }
             PostRsListTab.SCHEDULED -> {
+                add(PostRsMenuAction.SETTINGS)
                 add(PostRsMenuAction.VIEW)
                 add(PostRsMenuAction.READ)
                 add(PostRsMenuAction.SHARE)
