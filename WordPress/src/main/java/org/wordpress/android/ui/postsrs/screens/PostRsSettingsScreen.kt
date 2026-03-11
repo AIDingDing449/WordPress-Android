@@ -1,5 +1,7 @@
 package org.wordpress.android.ui.postsrs.screens
 
+import android.view.View
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -21,12 +23,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,23 +39,33 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,9 +73,14 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import org.wordpress.android.R
+import org.wordpress.android.ui.compose.components.SingleChoiceAlertDialog
+import org.wordpress.android.ui.postsrs.DialogState
 import org.wordpress.android.ui.postsrs.FieldState
 import org.wordpress.android.ui.postsrs.PostRsSettingsUiState
 import org.wordpress.android.ui.postsrs.RetryableField
+import org.wordpress.android.ui.postsrs.toLabel
+import uniffi.wp_api.PostFormat
+import uniffi.wp_api.PostStatus
 
 @Composable
 fun PostRsSettingsScreen(
@@ -69,7 +88,25 @@ fun PostRsSettingsScreen(
     onNavigateBack: () -> Unit,
     onRetry: () -> Unit = {},
     onRetryField: (RetryableField) -> Unit = {},
+    onStatusClicked: () -> Unit = {},
+    onStatusSelected: (PostStatus) -> Unit = {},
+    onPasswordClicked: () -> Unit = {},
+    onPasswordSet: (String) -> Unit = {},
+    onStickyToggled: () -> Unit = {},
+    onSlugClicked: () -> Unit = {},
+    onSlugSet: (String) -> Unit = {},
+    onExcerptClicked: () -> Unit = {},
+    onExcerptSet: (String) -> Unit = {},
+    onFormatClicked: () -> Unit = {},
+    onFormatSelected: (PostFormat) -> Unit = {},
+    onSaveClicked: () -> Unit = {},
+    onDismissDialog: () -> Unit = {},
+    onDiscardConfirmed: () -> Unit = {},
 ) {
+    BackHandler {
+        onNavigateBack()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,10 +139,28 @@ fun PostRsSettingsScreen(
                     uiState = uiState,
                     onNavigateBack = onNavigateBack,
                     onRetryField = onRetryField,
+                    onStatusClicked = onStatusClicked,
+                    onPasswordClicked = onPasswordClicked,
+                    onStickyToggled = onStickyToggled,
+                    onSlugClicked = onSlugClicked,
+                    onExcerptClicked = onExcerptClicked,
+                    onFormatClicked = onFormatClicked,
+                    onSaveClicked = onSaveClicked,
                 )
             }
         }
     }
+
+    SettingsDialogs(
+        uiState = uiState,
+        onStatusSelected = onStatusSelected,
+        onPasswordSet = onPasswordSet,
+        onSlugSet = onSlugSet,
+        onExcerptSet = onExcerptSet,
+        onFormatSelected = onFormatSelected,
+        onDismissDialog = onDismissDialog,
+        onDiscardConfirmed = onDiscardConfirmed,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,6 +209,13 @@ private fun HeroSettingsLayout(
     uiState: PostRsSettingsUiState,
     onNavigateBack: () -> Unit,
     onRetryField: (RetryableField) -> Unit,
+    onStatusClicked: () -> Unit,
+    onPasswordClicked: () -> Unit,
+    onStickyToggled: () -> Unit,
+    onSlugClicked: () -> Unit,
+    onExcerptClicked: () -> Unit,
+    onFormatClicked: () -> Unit,
+    onSaveClicked: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -182,14 +244,40 @@ private fun HeroSettingsLayout(
             SettingsContent(
                 uiState = uiState,
                 onRetryField = onRetryField,
+                onStatusClicked = onStatusClicked,
+                onPasswordClicked = onPasswordClicked,
+                onStickyToggled = onStickyToggled,
+                onSlugClicked = onSlugClicked,
+                onExcerptClicked = onExcerptClicked,
+                onFormatClicked = onFormatClicked,
             )
         }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
         FloatingBackButton(
             onNavigateBack = onNavigateBack,
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(start = 4.dp, top = 4.dp)
+            modifier = Modifier.padding(4.dp)
         )
+        if (uiState.hasChanges) {
+            FloatingSaveButton(
+                isSaving = uiState.isSaving,
+                onSaveClicked = onSaveClicked,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+            )
+        }
     }
 }
 
@@ -256,19 +344,44 @@ private fun FloatingBackButton(
     IconButton(
         onClick = onNavigateBack,
         modifier = modifier
-            .size(40.dp)
-            .background(
-                color = Color.Black.copy(alpha = 0.4f),
-                shape = CircleShape
-            )
     ) {
         Icon(
             Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(
                 R.string.back
             ),
-            tint = Color.White
+            tint = Color.White,
         )
+    }
+}
+
+@Composable
+private fun FloatingSaveButton(
+    isSaving: Boolean,
+    onSaveClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (isSaving) {
+        CircularProgressIndicator(
+            modifier = modifier
+                .padding(12.dp)
+                .size(24.dp),
+            strokeWidth = 2.dp,
+            color = Color.White,
+        )
+    } else {
+        IconButton(
+            onClick = onSaveClicked,
+            modifier = modifier
+        ) {
+            Icon(
+                Icons.Default.Check,
+                contentDescription = stringResource(
+                    R.string.save
+                ),
+                tint = Color.White,
+            )
+        }
     }
 }
 
@@ -307,6 +420,12 @@ private fun ErrorContent(
 private fun SettingsContent(
     uiState: PostRsSettingsUiState,
     onRetryField: (RetryableField) -> Unit,
+    onStatusClicked: () -> Unit,
+    onPasswordClicked: () -> Unit,
+    onStickyToggled: () -> Unit,
+    onSlugClicked: () -> Unit,
+    onExcerptClicked: () -> Unit,
+    onFormatClicked: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionHeader(
@@ -317,7 +436,10 @@ private fun SettingsContent(
             label = stringResource(
                 R.string.post_settings_status
             ),
-            value = uiState.statusLabel
+            value = statusDisplayLabel(uiState),
+            modifier = Modifier.clickable(
+                onClick = onStatusClicked
+            )
         )
         HorizontalDivider()
 
@@ -329,20 +451,21 @@ private fun SettingsContent(
         )
         HorizontalDivider()
 
-        if (uiState.password.isNullOrEmpty()) {
-            SettingsRow(
-                label = stringResource(R.string.password),
-                value = stringResource(R.string.none),
-                dimmed = true
-            )
-        } else {
-            SettingsRow(
-                label = stringResource(R.string.password),
-                value = stringResource(
+        val effectivePassword = uiState.effectivePassword
+        SettingsRow(
+            label = stringResource(R.string.password),
+            value = if (effectivePassword.isNullOrEmpty()) {
+                stringResource(R.string.none)
+            } else {
+                stringResource(
                     R.string.post_rs_settings_protected
                 )
+            },
+            dimmed = effectivePassword.isNullOrEmpty(),
+            modifier = Modifier.clickable(
+                onClick = onPasswordClicked
             )
-        }
+        )
         HorizontalDivider()
 
         AsyncSettingsRow(
@@ -387,15 +510,9 @@ private fun SettingsContent(
             )
         )
 
-        SettingsRow(
-            label = stringResource(
-                R.string.post_settings_mark_as_sticky_options_header
-            ),
-            value = if (uiState.sticky) {
-                stringResource(R.string.yes)
-            } else {
-                stringResource(R.string.no)
-            }
+        StickyRow(
+            sticky = uiState.effectiveSticky,
+            onToggle = onStickyToggled,
         )
         HorizontalDivider()
 
@@ -403,48 +520,504 @@ private fun SettingsContent(
             label = stringResource(
                 R.string.post_settings_post_format
             ),
-            value = uiState.formatLabel
+            value = formatDisplayLabel(uiState),
+            modifier = Modifier.clickable(
+                onClick = onFormatClicked
+            )
         )
         HorizontalDivider()
 
-        if (uiState.slug.isNotEmpty()) {
-            SettingsRow(
-                label = stringResource(
-                    R.string.post_settings_slug
-                ),
-                value = uiState.slug
+        val effectiveSlug = uiState.effectiveSlug
+        SettingsRow(
+            label = stringResource(
+                R.string.post_settings_slug
+            ),
+            value = effectiveSlug.ifEmpty {
+                stringResource(R.string.none)
+            },
+            dimmed = effectiveSlug.isEmpty(),
+            modifier = Modifier.clickable(
+                onClick = onSlugClicked
             )
-        } else {
-            SettingsRow(
-                label = stringResource(
-                    R.string.post_settings_slug
-                ),
-                value = stringResource(R.string.none),
-                dimmed = true
-            )
-        }
+        )
         HorizontalDivider()
 
-        if (uiState.excerpt.isNotEmpty()) {
-            ExpandableSettingsRow(
-                label = stringResource(
-                    R.string.post_settings_excerpt
-                ),
-                value = uiState.excerpt
+        val effectiveExcerpt = uiState.effectiveExcerpt
+        SettingsRow(
+            label = stringResource(
+                R.string.post_settings_excerpt
+            ),
+            value = effectiveExcerpt.ifEmpty {
+                stringResource(R.string.none)
+            },
+            dimmed = effectiveExcerpt.isEmpty(),
+            modifier = Modifier.clickable(
+                onClick = onExcerptClicked
             )
-        } else {
-            SettingsRow(
-                label = stringResource(
-                    R.string.post_settings_excerpt
-                ),
-                value = stringResource(R.string.none),
-                dimmed = true
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
+
+@Composable
+private fun statusDisplayLabel(
+    uiState: PostRsSettingsUiState,
+): String {
+    val status = uiState.editedStatus ?: uiState.postStatus
+    val resId = status.toLabel()
+    return if (resId != 0) stringResource(resId) else ""
+}
+
+@Composable
+private fun formatDisplayLabel(
+    uiState: PostRsSettingsUiState,
+): String {
+    val format = uiState.editedFormat ?: uiState.postFormat
+    return postFormatLabel(format)
+}
+
+@Composable
+private fun postFormatLabel(format: PostFormat?): String =
+    when (format) {
+        is PostFormat.Standard ->
+            stringResource(R.string.post_format_standard)
+        is PostFormat.Aside ->
+            stringResource(R.string.post_format_aside)
+        is PostFormat.Chat ->
+            stringResource(R.string.post_format_chat)
+        is PostFormat.Gallery ->
+            stringResource(R.string.post_format_gallery)
+        is PostFormat.Link ->
+            stringResource(R.string.post_format_link)
+        is PostFormat.Image ->
+            stringResource(R.string.post_format_image)
+        is PostFormat.Quote ->
+            stringResource(R.string.post_format_quote)
+        is PostFormat.Status ->
+            stringResource(R.string.post_format_status)
+        is PostFormat.Video ->
+            stringResource(R.string.post_format_video)
+        is PostFormat.Audio ->
+            stringResource(R.string.post_format_audio)
+        is PostFormat.Custom -> format.v1
+        null -> ""
+    }
+
+@Composable
+private fun StickyRow(
+    sticky: Boolean,
+    onToggle: () -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                stringResource(
+                    R.string
+                        .post_settings_mark_as_sticky_options_header
+                )
+            )
+        },
+        trailingContent = {
+            Switch(
+                checked = sticky,
+                onCheckedChange = { onToggle() }
+            )
+        },
+        modifier = Modifier.clickable(onClick = onToggle)
+    )
+}
+
+// region Dialogs
+
+@Composable
+private fun SettingsDialogs(
+    uiState: PostRsSettingsUiState,
+    onStatusSelected: (PostStatus) -> Unit,
+    onPasswordSet: (String) -> Unit,
+    onSlugSet: (String) -> Unit,
+    onExcerptSet: (String) -> Unit,
+    onFormatSelected: (PostFormat) -> Unit,
+    onDismissDialog: () -> Unit,
+    onDiscardConfirmed: () -> Unit,
+) {
+    when (uiState.dialogState) {
+        is DialogState.StatusDialog -> StatusDialog(
+            currentStatus = uiState.editedStatus
+                ?: uiState.postStatus,
+            onStatusSelected = onStatusSelected,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.PasswordDialog -> PasswordDialog(
+            currentPassword = uiState.effectivePassword
+                ?: "",
+            onPasswordSet = onPasswordSet,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.SlugDialog -> SlugDialog(
+            currentSlug = uiState.effectiveSlug,
+            onSlugSet = onSlugSet,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.ExcerptDialog -> ExcerptDialog(
+            currentExcerpt = uiState.effectiveExcerpt,
+            onExcerptSet = onExcerptSet,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.FormatDialog -> FormatDialog(
+            currentFormat = uiState.editedFormat
+                ?: uiState.postFormat,
+            onFormatSelected = onFormatSelected,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.DiscardDialog -> DiscardDialog(
+            onDiscard = onDiscardConfirmed,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.None -> Unit
+    }
+}
+
+@Composable
+private fun StatusDialog(
+    currentStatus: PostStatus?,
+    onStatusSelected: (PostStatus) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val statuses = listOf(
+        PostStatus.Publish,
+        PostStatus.Draft,
+        PostStatus.Pending,
+        PostStatus.Private,
+    )
+    val labels = statuses.map { status ->
+        val resId = status.toLabel()
+        if (resId != 0) stringResource(resId) else ""
+    }
+    val currentIndex = statuses.indexOfFirst {
+        it == currentStatus
+    }.coerceAtLeast(0)
+
+    val selectedIndex = remember {
+        mutableIntStateOf(currentIndex)
+    }
+
+    SingleChoiceAlertDialog(
+        title = stringResource(
+            R.string.post_rs_settings_status_dialog_title
+        ),
+        options = labels,
+        selectedIndex = selectedIndex.intValue,
+        onOptionSelected = { selectedIndex.intValue = it },
+        onConfirm = {
+            onStatusSelected(statuses[selectedIndex.intValue])
+        },
+        onDismiss = onDismiss,
+        confirmButtonText = stringResource(R.string.ok),
+    )
+}
+
+@Composable
+private fun PasswordDialog(
+    currentPassword: String,
+    onPasswordSet: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        val prev = view.importantForAutofill
+        view.importantForAutofill =
+            View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        onDispose {
+            view.importantForAutofill = prev
+        }
+    }
+
+    var text by rememberSaveable {
+        mutableStateOf(currentPassword)
+    }
+    var passwordVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    R.string
+                        .post_rs_settings_password_dialog_title
+                )
+            )
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string
+                                    .post_rs_settings_password_hint
+                            )
+                        )
+                    },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                passwordVisible =
+                                    !passwordVisible
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (
+                                    passwordVisible
+                                ) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (currentPassword.isNotEmpty()) {
+                    TextButton(
+                        onClick = { onPasswordSet("") },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(
+                            stringResource(
+                                R.string
+                                    .post_rs_settings_remove_password
+                            ),
+                            color = MaterialTheme
+                                .colorScheme.error
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onPasswordSet(text) },
+                enabled = text.isNotBlank()
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun TextFieldDialog(
+    title: String,
+    hint: String,
+    currentValue: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+    clearButtonText: String? = null,
+    onClear: (() -> Unit)? = null,
+) {
+    var text by rememberSaveable {
+        mutableStateOf(currentValue)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(
+                    text = hint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme
+                        .colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = singleLine,
+                    minLines = minLines,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (
+                    onClear != null &&
+                    clearButtonText != null &&
+                    currentValue.isNotEmpty()
+                ) {
+                    TextButton(
+                        onClick = onClear,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                    ) {
+                        Text(
+                            clearButtonText,
+                            color = MaterialTheme
+                                .colorScheme.error
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text) }) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun SlugDialog(
+    currentSlug: String,
+    onSlugSet: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    TextFieldDialog(
+        title = stringResource(
+            R.string.post_rs_settings_slug_dialog_title
+        ),
+        hint = stringResource(
+            R.string.post_settings_slug_dialog_hint
+        ),
+        currentValue = currentSlug,
+        onConfirm = onSlugSet,
+        onDismiss = onDismiss,
+        singleLine = true,
+    )
+}
+
+@Composable
+private fun ExcerptDialog(
+    currentExcerpt: String,
+    onExcerptSet: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    TextFieldDialog(
+        title = stringResource(
+            R.string.post_rs_settings_excerpt_dialog_title
+        ),
+        hint = stringResource(
+            R.string.post_settings_excerpt_dialog_hint
+        ),
+        currentValue = currentExcerpt,
+        onConfirm = onExcerptSet,
+        onDismiss = onDismiss,
+        minLines = 5,
+        clearButtonText = stringResource(
+            R.string.post_rs_settings_clear_excerpt
+        ),
+        onClear = { onExcerptSet("") },
+    )
+}
+
+@Suppress("ForbiddenComment")
+@Composable
+private fun FormatDialog(
+    currentFormat: PostFormat?,
+    onFormatSelected: (PostFormat) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // TODO: Replace hardcoded formats with site-supported
+    //  formats once wordpress-rs exposes that API
+    val formats = listOf(
+        PostFormat.Standard,
+        PostFormat.Aside,
+        PostFormat.Audio,
+        PostFormat.Chat,
+        PostFormat.Gallery,
+        PostFormat.Image,
+        PostFormat.Link,
+        PostFormat.Quote,
+        PostFormat.Status,
+        PostFormat.Video,
+    )
+    val labels = formats.map { postFormatLabel(it) }
+    val currentIndex = formats.indexOfFirst {
+        it == currentFormat
+    }.coerceAtLeast(0)
+
+    val selectedIndex = remember {
+        mutableIntStateOf(currentIndex)
+    }
+
+    SingleChoiceAlertDialog(
+        title = stringResource(
+            R.string.post_rs_settings_format_dialog_title
+        ),
+        options = labels,
+        selectedIndex = selectedIndex.intValue,
+        onOptionSelected = { selectedIndex.intValue = it },
+        onConfirm = {
+            onFormatSelected(formats[selectedIndex.intValue])
+        },
+        onDismiss = onDismiss,
+        confirmButtonText = stringResource(R.string.ok),
+    )
+}
+
+@Composable
+private fun DiscardDialog(
+    onDiscard: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    R.string
+                        .post_rs_settings_discard_title
+                )
+            )
+        },
+        text = {
+            Text(
+                stringResource(
+                    R.string
+                        .post_rs_settings_discard_message
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDiscard) {
+                Text(
+                    stringResource(R.string.button_discard)
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+// endregion
 
 @Composable
 private fun AsyncFieldRow(
@@ -571,6 +1144,7 @@ private fun SectionHeader(title: String) {
 private fun SettingsRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     dimmed: Boolean = false,
 ) {
     ListItem(
@@ -592,49 +1166,7 @@ private fun SettingsRow(
         } else {
             null
         },
-    )
-}
-
-@Composable
-private fun ExpandableSettingsRow(
-    label: String,
-    value: String,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var hasOverflow by remember { mutableStateOf(false) }
-    ListItem(
-        headlineContent = { Text(label) },
-        supportingContent = {
-            Text(
-                text = value,
-                maxLines = if (expanded) {
-                    Int.MAX_VALUE
-                } else {
-                    3
-                },
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme
-                    .onSurfaceVariant,
-                onTextLayout = { result ->
-                    if (!expanded) {
-                        hasOverflow = result.hasVisualOverflow
-                    }
-                }
-            )
-        },
-        modifier = if (hasOverflow || expanded) {
-            Modifier.clickable(
-                onClickLabel = stringResource(
-                    if (expanded) {
-                        R.string.show_less
-                    } else {
-                        R.string.more
-                    }
-                )
-            ) { expanded = !expanded }
-        } else {
-            Modifier
-        }
+        modifier = modifier,
     )
 }
 
@@ -668,7 +1200,6 @@ private fun PreviewSettingsLoaded() {
             uiState = PostRsSettingsUiState(
                 isLoading = false,
                 postTitle = "My First Post",
-                statusLabel = "Published",
                 publishDate = "Mar 6, 2026, 10:30 AM",
                 password = null,
                 authorName = FieldState.Loaded("Jane Doe"),
@@ -680,9 +1211,9 @@ private fun PreviewSettingsLoaded() {
                 ),
                 featuredImage = FieldState.Empty,
                 sticky = true,
-                formatLabel = "Standard",
                 slug = "my-first-post",
                 excerpt = "A short excerpt of the post.",
+                postStatus = PostStatus.Publish,
             ),
             onNavigateBack = {},
             onRetry = {},
@@ -699,7 +1230,6 @@ private fun PreviewSettingsHeroImage() {
             uiState = PostRsSettingsUiState(
                 isLoading = false,
                 postTitle = "My First Post",
-                statusLabel = "Published",
                 publishDate = "Mar 6, 2026, 10:30 AM",
                 password = null,
                 authorName = FieldState.Loaded("Jane Doe"),
@@ -713,9 +1243,9 @@ private fun PreviewSettingsHeroImage() {
                     "https://example.com/hero.jpg"
                 ),
                 sticky = true,
-                formatLabel = "Standard",
                 slug = "my-first-post",
                 excerpt = "A short excerpt of the post.",
+                postStatus = PostStatus.Publish,
             ),
             onNavigateBack = {},
             onRetry = {},
@@ -761,7 +1291,6 @@ private fun PreviewSettingsFieldErrors() {
             uiState = PostRsSettingsUiState(
                 isLoading = false,
                 postTitle = "Test Post",
-                statusLabel = "Draft",
                 publishDate = "Mar 6, 2026, 10:30 AM",
                 authorName = FieldState.Error(
                     "Couldn't load"
@@ -771,7 +1300,6 @@ private fun PreviewSettingsFieldErrors() {
                 ),
                 tagNames = FieldState.Loading,
                 featuredImage = FieldState.Loading,
-                formatLabel = "Standard",
                 slug = "test-post",
                 excerpt = "",
             ),

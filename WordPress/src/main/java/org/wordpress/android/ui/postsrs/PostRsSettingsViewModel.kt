@@ -27,12 +27,14 @@ import uniffi.wp_api.PostEndpointType
 import uniffi.wp_api.PostFormat
 import uniffi.wp_api.PostRetrieveParams
 import uniffi.wp_api.PostStatus
+import uniffi.wp_api.PostUpdateParams
 import uniffi.wp_api.TermEndpointType
 import java.text.DateFormat
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("TooManyFunctions")
 class PostRsSettingsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     selectedSiteRepository: SelectedSiteRepository,
@@ -115,6 +117,212 @@ class PostRsSettingsViewModel @Inject constructor(
         }
     }
 
+    fun onStatusClicked() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.StatusDialog)
+        }
+    }
+
+    fun onStatusSelected(status: PostStatus) {
+        val original = _uiState.value.postStatus
+        _uiState.update {
+            it.copy(
+                editedStatus = status.takeIf { es ->
+                    es != original
+                },
+                dialogState = DialogState.None
+            )
+        }
+    }
+
+    fun onPasswordClicked() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.PasswordDialog)
+        }
+    }
+
+    fun onPasswordSet(password: String) {
+        val original = _uiState.value.password ?: ""
+        _uiState.update {
+            it.copy(
+                editedPassword = password.takeIf { ep ->
+                    ep != original
+                },
+                dialogState = DialogState.None
+            )
+        }
+    }
+
+    fun onSlugClicked() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.SlugDialog)
+        }
+    }
+
+    fun onSlugSet(slug: String) {
+        val original = _uiState.value.slug
+        _uiState.update {
+            it.copy(
+                editedSlug = slug.takeIf { es ->
+                    es != original
+                },
+                dialogState = DialogState.None
+            )
+        }
+    }
+
+    fun onExcerptClicked() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.ExcerptDialog)
+        }
+    }
+
+    fun onExcerptSet(excerpt: String) {
+        val original = _uiState.value.excerpt
+        _uiState.update {
+            it.copy(
+                editedExcerpt = excerpt.takeIf { ee ->
+                    ee != original
+                },
+                dialogState = DialogState.None
+            )
+        }
+    }
+
+    fun onFormatClicked() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.FormatDialog)
+        }
+    }
+
+    fun onFormatSelected(format: PostFormat) {
+        val original = _uiState.value.postFormat
+        _uiState.update {
+            it.copy(
+                editedFormat = format.takeIf { ef ->
+                    ef != original
+                },
+                dialogState = DialogState.None
+            )
+        }
+    }
+
+    fun onStickyToggled() {
+        val current = _uiState.value
+        val original = current.sticky
+        val newValue = !current.effectiveSticky
+        _uiState.update {
+            it.copy(
+                editedSticky = newValue.takeIf { es ->
+                    es != original
+                }
+            )
+        }
+    }
+
+    fun onDismissDialog() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.None)
+        }
+    }
+
+    fun onBackClicked() {
+        if (_uiState.value.hasChanges) {
+            _uiState.update {
+                it.copy(dialogState = DialogState.DiscardDialog)
+            }
+        } else {
+            _events.trySend(PostRsSettingsEvent.Finish)
+        }
+    }
+
+    fun onDiscardConfirmed() {
+        _uiState.update {
+            it.copy(dialogState = DialogState.None)
+        }
+        _events.trySend(PostRsSettingsEvent.Finish)
+    }
+
+    @Suppress("ReturnCount")
+    fun onSaveClicked() {
+        val site = site ?: return
+        val state = _uiState.value
+        if (!state.hasChanges || state.isSaving) return
+
+        if (!networkUtilsWrapper.isNetworkAvailable()) {
+            _events.trySend(
+                PostRsSettingsEvent.ShowSnackbar(
+                    resourceProvider.getString(
+                        R.string.error_generic_network
+                    )
+                )
+            )
+            return
+        }
+
+        _uiState.update { it.copy(isSaving = true) }
+        savePost(site, state)
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun savePost(
+        site: org.wordpress.android.fluxc.model.SiteModel,
+        state: PostRsSettingsUiState,
+    ) {
+        viewModelScope.launch {
+            try {
+                val params = PostUpdateParams(
+                    status = state.editedStatus,
+                    password = state.editedPassword,
+                    sticky = state.editedSticky,
+                    slug = state.editedSlug,
+                    excerpt = state.editedExcerpt,
+                    format = state.editedFormat,
+                    meta = null
+                )
+                withContext(Dispatchers.IO) {
+                    val client =
+                        wpApiClientProvider.getWpApiClient(site)
+                    val response = client.request {
+                        it.posts().update(
+                            PostEndpointType.Posts,
+                            postId,
+                            params
+                        )
+                    }
+                    when (response) {
+                        is WpRequestResult.Success -> Unit
+                        else -> throw PostApiException(
+                            (response
+                                as? WpRequestResult.WpError<*>)
+                                ?.errorMessage
+                        )
+                    }
+                }
+                _events.trySend(
+                    PostRsSettingsEvent.FinishWithChanges
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLog.e(
+                    AppLog.T.POSTS,
+                    "Failed to save post settings",
+                    e
+                )
+                _uiState.update { it.copy(isSaving = false) }
+                val message = e.message?.takeIf {
+                    it.isNotBlank()
+                } ?: resourceProvider.getString(
+                    R.string.post_rs_settings_save_error
+                )
+                _events.trySend(
+                    PostRsSettingsEvent.ShowSnackbar(message)
+                )
+            }
+        }
+    }
+
     private fun loadPost() {
         val site = site ?: return
         if (!networkUtilsWrapper.isNetworkAvailable()) {
@@ -168,7 +376,7 @@ class PostRsSettingsViewModel @Inject constructor(
         when (response) {
             is WpRequestResult.Success ->
                 response.response.data
-            else -> throw PostFetchException(
+            else -> throw PostApiException(
                 (response as? WpRequestResult.WpError<*>)
                     ?.errorMessage
             )
@@ -202,7 +410,6 @@ class PostRsSettingsViewModel @Inject constructor(
             isLoading = false,
             postTitle = post.title?.raw?.takeIf { it.isNotBlank() }
                 ?: post.title?.rendered ?: "",
-            statusLabel = formatStatusLabel(post.status),
             publishDate = formatDate(post.dateGmt),
             password = post.password,
             authorName = if (
@@ -233,9 +440,10 @@ class PostRsSettingsViewModel @Inject constructor(
                 FieldState.Empty
             },
             sticky = post.sticky ?: false,
-            formatLabel = formatPostFormatLabel(post.format),
             slug = post.slug,
             excerpt = post.excerpt?.raw ?: "",
+            postStatus = post.status,
+            postFormat = post.format,
         )
     }
 
@@ -353,15 +561,6 @@ class PostRsSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun formatStatusLabel(status: PostStatus?): String {
-        val resId = status.toLabel()
-        return if (resId != 0) {
-            resourceProvider.getString(resId)
-        } else {
-            ""
-        }
-    }
-
     private fun formatDate(dateGmt: Date): String {
         return DateFormat.getDateTimeInstance(
             DateFormat.MEDIUM,
@@ -369,35 +568,8 @@ class PostRsSettingsViewModel @Inject constructor(
         ).format(dateGmt)
     }
 
-    private fun formatPostFormatLabel(
-        format: PostFormat?
-    ): String = when (format) {
-        is PostFormat.Standard ->
-            resourceProvider.getString(R.string.post_format_standard)
-        is PostFormat.Aside ->
-            resourceProvider.getString(R.string.post_format_aside)
-        is PostFormat.Chat ->
-            resourceProvider.getString(R.string.post_format_chat)
-        is PostFormat.Gallery ->
-            resourceProvider.getString(R.string.post_format_gallery)
-        is PostFormat.Link ->
-            resourceProvider.getString(R.string.post_format_link)
-        is PostFormat.Image ->
-            resourceProvider.getString(R.string.post_format_image)
-        is PostFormat.Quote ->
-            resourceProvider.getString(R.string.post_format_quote)
-        is PostFormat.Status ->
-            resourceProvider.getString(R.string.post_format_status)
-        is PostFormat.Video ->
-            resourceProvider.getString(R.string.post_format_video)
-        is PostFormat.Audio ->
-            resourceProvider.getString(R.string.post_format_audio)
-        is PostFormat.Custom -> format.v1
-        null -> ""
-    }
-
-    private class PostFetchException(message: String?) :
-        Exception(message ?: "Failed to fetch post")
+    private class PostApiException(message: String?) :
+        Exception(message ?: "Post API request failed")
 
     companion object {
         const val EXTRA_POST_ID = "extra_post_id"
