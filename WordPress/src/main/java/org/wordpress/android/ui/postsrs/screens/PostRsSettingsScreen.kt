@@ -13,26 +13,39 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -45,8 +58,14 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +81,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -72,8 +92,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.wordpress.android.R
 import org.wordpress.android.ui.compose.components.SingleChoiceAlertDialog
+import org.wordpress.android.ui.postsrs.AuthorInfo
 import org.wordpress.android.ui.postsrs.DialogState
 import org.wordpress.android.ui.postsrs.FieldState
 import org.wordpress.android.ui.postsrs.PostRsSettingsUiState
@@ -81,8 +103,12 @@ import org.wordpress.android.ui.postsrs.RetryableField
 import org.wordpress.android.ui.postsrs.toLabel
 import uniffi.wp_api.PostFormat
 import uniffi.wp_api.PostStatus
+import java.util.Calendar
+import java.util.Date
+import org.wordpress.android.ui.postsrs.UTC
 
 @Composable
+@Suppress("LongParameterList")
 fun PostRsSettingsScreen(
     uiState: PostRsSettingsUiState,
     onNavigateBack: () -> Unit,
@@ -99,6 +125,14 @@ fun PostRsSettingsScreen(
     onExcerptSet: (String) -> Unit = {},
     onFormatClicked: () -> Unit = {},
     onFormatSelected: (PostFormat) -> Unit = {},
+    onDateClicked: () -> Unit = {},
+    onDateSelected: (Int, Int, Int) -> Unit = { _, _, _ -> },
+    onTimeSelected: (Int, Int) -> Unit = { _, _ -> },
+    onAuthorClicked: () -> Unit = {},
+    onAuthorSelected: (Long) -> Unit = {},
+    onFeaturedImageClicked: () -> Unit = {},
+    onFeaturedImageRemoved: () -> Unit = {},
+    onLoadMoreAuthors: () -> Unit = {},
     onSaveClicked: () -> Unit = {},
     onDismissDialog: () -> Unit = {},
     onDiscardConfirmed: () -> Unit = {},
@@ -145,6 +179,12 @@ fun PostRsSettingsScreen(
                     onSlugClicked = onSlugClicked,
                     onExcerptClicked = onExcerptClicked,
                     onFormatClicked = onFormatClicked,
+                    onDateClicked = onDateClicked,
+                    onAuthorClicked = onAuthorClicked,
+                    onFeaturedImageClicked =
+                        onFeaturedImageClicked,
+                    onFeaturedImageRemoved =
+                        onFeaturedImageRemoved,
                     onSaveClicked = onSaveClicked,
                 )
             }
@@ -158,6 +198,10 @@ fun PostRsSettingsScreen(
         onSlugSet = onSlugSet,
         onExcerptSet = onExcerptSet,
         onFormatSelected = onFormatSelected,
+        onDateSelected = onDateSelected,
+        onTimeSelected = onTimeSelected,
+        onAuthorSelected = onAuthorSelected,
+        onLoadMoreAuthors = onLoadMoreAuthors,
         onDismissDialog = onDismissDialog,
         onDiscardConfirmed = onDiscardConfirmed,
     )
@@ -204,6 +248,7 @@ private fun NormalAppBarLayout(
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun HeroSettingsLayout(
     uiState: PostRsSettingsUiState,
@@ -215,6 +260,10 @@ private fun HeroSettingsLayout(
     onSlugClicked: () -> Unit,
     onExcerptClicked: () -> Unit,
     onFormatClicked: () -> Unit,
+    onDateClicked: () -> Unit,
+    onAuthorClicked: () -> Unit,
+    onFeaturedImageClicked: () -> Unit,
+    onFeaturedImageRemoved: () -> Unit,
     onSaveClicked: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -226,8 +275,13 @@ private fun HeroSettingsLayout(
         ) {
             when (uiState.featuredImage) {
                 is FieldState.Loaded ->
-                    HeroImage(
-                        imageUrl = uiState.featuredImage.value
+                    HeroImageWithMenu(
+                        imageUrl =
+                            uiState.featuredImage.value,
+                        onChangeClicked =
+                            onFeaturedImageClicked,
+                        onRemoveClicked =
+                            onFeaturedImageRemoved,
                     )
                 is FieldState.Loading ->
                     HeroImageShimmer()
@@ -236,10 +290,13 @@ private fun HeroSettingsLayout(
                         text = stringResource(
                             R.string
                                 .post_rs_settings_featured_image_error
-                        )
+                        ),
+                        onClick = onFeaturedImageClicked,
                     )
                 is FieldState.Empty ->
-                    HeroImagePlaceholder()
+                    HeroImagePlaceholder(
+                        onClick = onFeaturedImageClicked,
+                    )
             }
             SettingsContent(
                 uiState = uiState,
@@ -250,6 +307,8 @@ private fun HeroSettingsLayout(
                 onSlugClicked = onSlugClicked,
                 onExcerptClicked = onExcerptClicked,
                 onFormatClicked = onFormatClicked,
+                onDateClicked = onDateClicked,
+                onAuthorClicked = onAuthorClicked,
             )
         }
         Box(
@@ -282,7 +341,11 @@ private fun HeroSettingsLayout(
 }
 
 @Composable
-private fun HeroImage(imageUrl: String) {
+private fun HeroImageWithMenu(
+    imageUrl: String,
+    onChangeClicked: () -> Unit,
+    onRemoveClicked: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -290,7 +353,9 @@ private fun HeroImage(imageUrl: String) {
     ) {
         ShimmerBox(modifier = Modifier.matchParentSize())
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
+            model = ImageRequest.Builder(
+                LocalContext.current
+            )
                 .data(imageUrl)
                 .crossfade(true)
                 .build(),
@@ -300,6 +365,86 @@ private fun HeroImage(imageUrl: String) {
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
+        FeaturedImageEditButton(
+            onChangeClicked = onChangeClicked,
+            onRemoveClicked = onRemoveClicked,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+        )
+    }
+}
+
+@Composable
+private fun EditIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .background(
+                Color.Black.copy(alpha = 0.5f),
+                MaterialTheme.shapes.small
+            )
+            .size(36.dp)
+    ) {
+        Icon(
+            Icons.Default.Edit,
+            contentDescription = stringResource(
+                R.string
+                    .post_rs_settings_edit_featured_image
+            ),
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun FeaturedImageEditButton(
+    onChangeClicked: () -> Unit,
+    onRemoveClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        EditIconButton(onClick = { expanded = true })
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            R.string
+                                .post_rs_settings_change_featured_image
+                        )
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onChangeClicked()
+                }
+            )
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            R.string
+                                .post_rs_settings_remove_featured_image
+                        ),
+                        color = MaterialTheme
+                            .colorScheme.error
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onRemoveClicked()
+                }
+            )
+        }
     }
 }
 
@@ -317,22 +462,37 @@ private fun HeroImagePlaceholder(
     text: String = stringResource(
         R.string.post_rs_settings_featured_image_not_set
     ),
+    onClick: (() -> Unit)? = null,
 ) {
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        Modifier
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(16f / 9f)
             .background(
                 MaterialTheme.colorScheme.surfaceVariant
-            ),
-        contentAlignment = Alignment.Center
+            )
+            .then(clickModifier),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme
-                .onSurfaceVariant
+                .onSurfaceVariant,
+            modifier = Modifier.align(Alignment.Center)
         )
+        if (onClick != null) {
+            EditIconButton(
+                onClick = onClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp)
+            )
+        }
     }
 }
 
@@ -426,6 +586,8 @@ private fun SettingsContent(
     onSlugClicked: () -> Unit,
     onExcerptClicked: () -> Unit,
     onFormatClicked: () -> Unit,
+    onDateClicked: () -> Unit,
+    onAuthorClicked: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         SectionHeader(
@@ -447,7 +609,10 @@ private fun SettingsContent(
             label = stringResource(
                 R.string.post_settings_time_and_date
             ),
-            value = uiState.publishDate
+            value = uiState.publishDate,
+            modifier = Modifier.clickable(
+                onClick = onDateClicked
+            )
         )
         HorizontalDivider()
 
@@ -468,7 +633,7 @@ private fun SettingsContent(
         )
         HorizontalDivider()
 
-        AsyncSettingsRow(
+        AsyncFieldRow(
             label = stringResource(
                 R.string.post_settings_author
             ),
@@ -476,7 +641,17 @@ private fun SettingsContent(
             onRetry = {
                 onRetryField(RetryableField.AUTHOR)
             }
-        )
+        ) { value ->
+            SettingsRow(
+                label = stringResource(
+                    R.string.post_settings_author
+                ),
+                value = value,
+                modifier = Modifier.clickable(
+                    onClick = onAuthorClicked
+                )
+            )
+        }
         HorizontalDivider()
 
         SectionHeader(
@@ -638,6 +813,10 @@ private fun SettingsDialogs(
     onSlugSet: (String) -> Unit,
     onExcerptSet: (String) -> Unit,
     onFormatSelected: (PostFormat) -> Unit,
+    onDateSelected: (Int, Int, Int) -> Unit,
+    onTimeSelected: (Int, Int) -> Unit,
+    onAuthorSelected: (Long) -> Unit,
+    onLoadMoreAuthors: () -> Unit,
     onDismissDialog: () -> Unit,
     onDiscardConfirmed: () -> Unit,
 ) {
@@ -668,6 +847,25 @@ private fun SettingsDialogs(
             currentFormat = uiState.editedFormat
                 ?: uiState.postFormat,
             onFormatSelected = onFormatSelected,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.DateDialog -> DateDialog(
+            currentDate = uiState.effectiveDate,
+            onDateSelected = onDateSelected,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.TimeDialog -> TimeDialog(
+            currentDate = uiState.effectiveDate,
+            onTimeSelected = onTimeSelected,
+            onDismiss = onDismissDialog,
+        )
+        is DialogState.AuthorDialog -> AuthorDialog(
+            authors = uiState.siteAuthors,
+            currentAuthorId = uiState.effectiveAuthorId,
+            isLoadingMore = uiState.isLoadingMoreAuthors,
+            canLoadMore = uiState.canLoadMoreAuthors,
+            onAuthorSelected = onAuthorSelected,
+            onLoadMore = onLoadMoreAuthors,
             onDismiss = onDismissDialog,
         )
         is DialogState.DiscardDialog -> DiscardDialog(
@@ -979,6 +1177,261 @@ private fun FormatDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateDialog(
+    currentDate: Date?,
+    onDateSelected: (Int, Int, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Normalize to UTC midnight for DatePickerState
+    val initialMillis = currentDate?.let { date ->
+        val cal = Calendar.getInstance(UTC)
+        cal.time = date
+        cal[Calendar.HOUR_OF_DAY] = 0
+        cal[Calendar.MINUTE] = 0
+        cal[Calendar.SECOND] = 0
+        cal[Calendar.MILLISECOND] = 0
+        cal.timeInMillis
+    } ?: System.currentTimeMillis()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialMillis
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val millis = datePickerState
+                        .selectedDateMillis ?: return@TextButton
+                    val cal = Calendar.getInstance(UTC)
+                    cal.timeInMillis = millis
+                    onDateSelected(
+                        cal[Calendar.YEAR],
+                        cal[Calendar.MONTH],
+                        cal[Calendar.DAY_OF_MONTH]
+                    )
+                }
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeDialog(
+    currentDate: Date?,
+    onTimeSelected: (Int, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val cal = remember(currentDate) {
+        Calendar.getInstance(UTC).apply {
+            time = currentDate ?: Date()
+        }
+    }
+    val timePickerState = rememberTimePickerState(
+        initialHour = cal[Calendar.HOUR_OF_DAY],
+        initialMinute = cal[Calendar.MINUTE],
+    )
+
+    TimePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onTimeSelected(
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
+                }
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        title = {
+            Text(
+                stringResource(
+                    R.string.post_rs_settings_select_time
+                )
+            )
+        }
+    ) {
+        TimePicker(state = timePickerState)
+    }
+}
+
+@Composable
+private fun AuthorDialog(
+    authors: List<AuthorInfo>,
+    currentAuthorId: Long,
+    isLoadingMore: Boolean,
+    canLoadMore: Boolean,
+    onAuthorSelected: (Long) -> Unit,
+    onLoadMore: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (authors.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    stringResource(
+                        R.string
+                            .post_rs_settings_author_dialog_title
+                    )
+                )
+            },
+            text = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+        return
+    }
+
+    val currentIndex = authors.indexOfFirst {
+        it.id == currentAuthorId
+    }.coerceAtLeast(0)
+
+    val selectedIndex = remember {
+        mutableIntStateOf(currentIndex)
+    }
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(canLoadMore) {
+        if (!canLoadMore) return@LaunchedEffect
+        snapshotFlow {
+            val info = listState.layoutInfo
+            val lastVisible =
+                info.visibleItemsInfo.lastOrNull()?.index
+                    ?: 0
+            lastVisible >= info.totalItemsCount -
+                AUTHOR_LOAD_THRESHOLD
+        }.distinctUntilChanged().collect { shouldLoad ->
+            if (shouldLoad) onLoadMore()
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    R.string
+                        .post_rs_settings_author_dialog_title
+                )
+            )
+        },
+        text = {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .selectableGroup()
+                    .heightIn(max = 400.dp)
+            ) {
+                itemsIndexed(
+                    items = authors,
+                    key = { _, author -> author.id }
+                ) { index, author ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = index ==
+                                    selectedIndex.intValue,
+                                onClick = {
+                                    selectedIndex.intValue =
+                                        index
+                                },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = index ==
+                                selectedIndex.intValue,
+                            onClick = null
+                        )
+                        Text(
+                            text = author.name,
+                            style = MaterialTheme
+                                .typography.bodyLarge,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                        )
+                    }
+                }
+                if (isLoadingMore) {
+                    item(key = "loading_more_authors") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment =
+                                Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier =
+                                    Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onAuthorSelected(
+                        authors[selectedIndex.intValue].id
+                    )
+                }
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+private const val AUTHOR_LOAD_THRESHOLD = 3
+
 @Composable
 private fun DiscardDialog(
     onDiscard: () -> Unit,
@@ -1056,17 +1509,6 @@ private fun AsyncFieldRow(
                 message = state.message,
                 onRetry = onRetry
             )
-    }
-}
-
-@Composable
-private fun AsyncSettingsRow(
-    label: String,
-    state: FieldState,
-    onRetry: () -> Unit,
-) {
-    AsyncFieldRow(label, state, onRetry) { value ->
-        SettingsRow(label = label, value = value)
     }
 }
 

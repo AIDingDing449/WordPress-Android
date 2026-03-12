@@ -4,6 +4,7 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.wordpress.android.fluxc.model.SiteModel
 import org.wordpress.android.fluxc.network.rest.wpapi.rs.WpApiClientProvider
+import org.wordpress.android.ui.postsrs.AuthorInfo
 import org.wordpress.android.util.AppLog
 import org.wordpress.android.util.PhotonUtils
 import org.wordpress.android.util.SiteUtils
@@ -15,6 +16,11 @@ import uniffi.wp_api.UserListParams
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class AuthorPage(
+    val authors: List<AuthorInfo>,
+    val nextPageParams: UserListParams?,
+)
 
 @Singleton
 class PostRsRestClient @Inject constructor(
@@ -38,16 +44,30 @@ class PostRsRestClient @Inject constructor(
      * network call using the `include` parameter, returning a map of
      * media ID to Photon-optimised URL. IDs already in the local cache
      * are returned immediately without a network round-trip.
+     *
+     * @param widthDp target display width in dp for Photon resizing.
+     *     Pass 0 to use the full screen width.
      */
     suspend fun fetchMediaUrls(
         site: SiteModel,
-        mediaIds: List<Long>
+        mediaIds: List<Long>,
+        widthDp: Int = 0,
     ): Map<Long, String> {
+        val widthPx = if (widthDp > 0) {
+            (widthDp * context.resources.displayMetrics.density)
+                .toInt()
+        } else {
+            0
+        }
         val result = mutableMapOf<Long, String>()
         val uncached = mutableListOf<Long>()
         for (id in mediaIds) {
             val cached = mediaUrlCache[id]
-            if (cached != null) result[id] = cached else uncached.add(id)
+            if (cached != null) {
+                result[id] = toPhotonUrl(site, cached, widthPx)
+            } else {
+                uncached.add(id)
+            }
         }
         if (uncached.isEmpty()) return result
 
@@ -60,9 +80,10 @@ class PostRsRestClient @Inject constructor(
         when (response) {
             is WpRequestResult.Success -> {
                 for (media in response.response.data) {
-                    val url = toPhotonUrl(site, media.sourceUrl)
-                    mediaUrlCache[media.id] = url
-                    result[media.id] = url
+                    mediaUrlCache[media.id] = media.sourceUrl
+                    result[media.id] = toPhotonUrl(
+                        site, media.sourceUrl, widthPx
+                    )
                 }
             }
             else -> {
@@ -173,11 +194,71 @@ class PostRsRestClient @Inject constructor(
         return result
     }
 
-    private fun toPhotonUrl(site: SiteModel, sourceUrl: String): String {
+    /**
+     * Fetches a page of users for the given site, returning an
+     * [AuthorPage] with the authors and optional next-page params.
+     * Results are also cached in [userNameCache].
+     */
+    suspend fun fetchSiteAuthors(
+        site: SiteModel,
+        params: UserListParams = UserListParams(
+            include = emptyList(),
+            perPage = AUTHORS_PER_PAGE
+        ),
+    ): AuthorPage {
+        val client = wpApiClientProvider.getWpApiClient(site)
+        val response = client.request {
+            it.users().listWithViewContext(params)
+        }
+        return when (response) {
+            is WpRequestResult.Success -> {
+                val authors =
+                    response.response.data.map { user ->
+                        userNameCache[user.id] = user.name
+                        AuthorInfo(
+                            id = user.id,
+                            name = user.name
+                        )
+                    }
+                AuthorPage(
+                    authors = authors,
+                    nextPageParams =
+                        response.response.nextPageParams,
+                )
+            }
+            else -> {
+                val msg =
+                    (response as? WpRequestResult.WpError<*>)
+                        ?.errorMessage
+                AppLog.w(
+                    AppLog.T.POSTS,
+                    "fetchSiteAuthors failed: $msg"
+                )
+                AuthorPage(
+                    authors = emptyList(),
+                    nextPageParams = null,
+                )
+            }
+        }
+    }
+
+    companion object {
+        private const val AUTHORS_PER_PAGE: UInt = 20u
+    }
+
+    private fun toPhotonUrl(
+        site: SiteModel,
+        sourceUrl: String,
+        widthPx: Int = 0,
+    ): String {
         if (!SiteUtils.isPhotonCapable(site)) return sourceUrl
-        val widthPx = context.resources.displayMetrics.widthPixels
+        val width = if (widthPx > 0) {
+            widthPx
+        } else {
+            context.resources.displayMetrics.widthPixels
+        }
         return PhotonUtils.getPhotonImageUrl(
-            sourceUrl, widthPx, 0, site.isPrivateWPComAtomic
+            sourceUrl, width, 0, site.isPrivateWPComAtomic
         )
     }
 }
