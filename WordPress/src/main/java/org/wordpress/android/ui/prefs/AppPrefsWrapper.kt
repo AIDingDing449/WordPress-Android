@@ -56,10 +56,6 @@ class AppPrefsWrapper @Inject constructor(val buildConfigWrapper: BuildConfigWra
         get() = AppPrefs.getSystemNotificationsEnabled()
         set(value) = AppPrefs.setSystemNotificationsEnabled(value)
 
-    var shouldShowPostSignupInterstitial: Boolean
-        get() = AppPrefs.shouldShowPostSignupInterstitial()
-        set(shouldShow) = AppPrefs.setShouldShowPostSignupInterstitial(shouldShow)
-
     var readerTagsUpdatedTimestamp: Long
         get() = AppPrefs.getReaderTagsUpdatedTimestamp()
         set(timestamp) = AppPrefs.setReaderTagsUpdatedTimestamp(timestamp)
@@ -104,6 +100,12 @@ class AppPrefsWrapper @Inject constructor(val buildConfigWrapper: BuildConfigWra
 
     fun setStatsCardsConfigurationJson(siteId: Long, json: String?) =
         AppPrefs.setStatsCardsConfigurationJson(siteId, json)
+
+    fun getSubscribersCardsConfigurationJson(siteId: Long): String? =
+        AppPrefs.getSubscribersCardsConfigurationJson(siteId)
+
+    fun setSubscribersCardsConfigurationJson(siteId: Long, json: String?) =
+        AppPrefs.setSubscribersCardsConfigurationJson(siteId, json)
 
     fun getAppWidgetSiteId(appWidgetId: Int) = AppPrefs.getStatsWidgetSelectedSiteId(appWidgetId)
     fun setAppWidgetSiteId(siteId: Long, appWidgetId: Int) = AppPrefs.setStatsWidgetSelectedSiteId(siteId, appWidgetId)

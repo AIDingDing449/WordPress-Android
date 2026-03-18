@@ -15,11 +15,10 @@ import org.wordpress.android.fluxc.network.discovery.SelfHostedEndpointFinder
 import org.wordpress.android.fluxc.store.SiteStore
 import org.wordpress.android.fluxc.store.SiteStore.OnSiteChanged
 import org.wordpress.android.fluxc.utils.AppLogWrapper
-import org.wordpress.android.login.util.SiteUtils
+import org.wordpress.android.util.SiteUtils
 import org.wordpress.android.modules.IO_THREAD
 import org.wordpress.android.ui.accounts.login.ApplicationPasswordLoginHelper
 import org.wordpress.android.ui.accounts.login.ApplicationPasswordLoginHelper.UriLogin
-import org.wordpress.android.ui.prefs.AppPrefsWrapper
 import org.wordpress.android.util.AppLog
 import org.wordpress.android.util.UrlUtils
 import javax.inject.Inject
@@ -32,7 +31,6 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
     private val applicationPasswordLoginHelper: ApplicationPasswordLoginHelper,
     private val selfHostedEndpointFinder: SelfHostedEndpointFinder,
     private val siteStore: SiteStore,
-    private val appPrefsWrapper: AppPrefsWrapper,
     private val appLogWrapper: AppLogWrapper,
 ) : ViewModel() {
     private val _onFinishedEvent = MutableSharedFlow<NavigationActionData>()
@@ -62,11 +60,10 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
     fun setupSite(rawData: String) {
         viewModelScope.launch {
             if (rawData.isEmpty()) {
-                appLogWrapper.e(AppLog.T.MAIN, "Cannot store credentials: rawData is empty")
+                appLogWrapper.e(AppLog.T.MAIN, "A_P: Cannot store credentials: rawData is empty")
                 _onFinishedEvent.emit(
                     NavigationActionData(
                         showSiteSelector = false,
-                        showPostSignupInterstitial = false,
                         siteUrl = "",
                         oldSitesIDs = oldSitesIDs,
                         isError = true
@@ -95,7 +92,10 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
         try {
             applicationPasswordLoginHelper.storeApplicationPasswordCredentialsFrom(urlLogin)
         } catch (e: Exception) {
-            appLogWrapper.e(AppLog.T.DB, "Error storing credentials: ${e.stackTraceToString()}")
+            appLogWrapper.e(
+                AppLog.T.DB,
+                "A_P: Error storing credentials: ${e.stackTraceToString()}"
+            )
             false
         }
     }
@@ -109,9 +109,14 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
         ) = withContext(ioDispatcher) {
         try {
             if (username.isEmpty() || password.isEmpty() || siteUrl.isEmpty() || apiRootUrl.isEmpty()) {
-                appLogWrapper.e(AppLog.T.MAIN, "Cannot fetch sites for credential storing: " +
-                        "Username: $username, Password: ${password.isEmpty()}, SiteUrl: $siteUrl, " +
-                        "API Root URL: $apiRootUrl")
+                appLogWrapper.e(
+                    AppLog.T.MAIN,
+                    "A_P: Cannot fetch sites for credential storing" +
+                        " - username isEmpty=${username.isEmpty()}" +
+                        ", password isEmpty=${password.isEmpty()}" +
+                        ", siteUrl isEmpty=${siteUrl.isEmpty()}" +
+                        ", apiRootUrl isEmpty=${apiRootUrl.isEmpty()}"
+                )
                 emitErrorFetching(siteUrl)
             } else {
                 val xmlRpcEndpoint =
@@ -128,7 +133,10 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            appLogWrapper.e(AppLog.T.API, "Error fetching sites: ${e.stackTraceToString()}")
+            appLogWrapper.e(
+                AppLog.T.API,
+                "A_P: Error fetching sites: ${e.stackTraceToString()}"
+            )
             emitErrorFetching(siteUrl)
         }
     }
@@ -136,7 +144,6 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
     private suspend fun emitErrorFetching(siteUrl: String) =  _onFinishedEvent.emit(
         NavigationActionData(
             showSiteSelector = false,
-            showPostSignupInterstitial = false,
             siteUrl = siteUrl,
             oldSitesIDs = oldSitesIDs,
             isError = true
@@ -150,11 +157,22 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
             val currentNormalizedUrl = UrlUtils.normalizeUrl(currentUrlLogin?.siteUrl)
             val site = siteStore.sites.firstOrNull { UrlUtils.normalizeUrl(it.url) == currentNormalizedUrl }
             if (event.rowsAffected < 1 || site == null || applicationPasswordLoginHelper.siteHasBadCredentials(site)) {
-                appLogWrapper.e(AppLog.T.MAIN, "Site not found or credentials are empty.")
+                appLogWrapper.e(
+                    AppLog.T.MAIN,
+                    "A_P: onSiteChanged failed" +
+                        " for: ${currentUrlLogin?.siteUrl}" +
+                        " - rowsAffected=${event.rowsAffected}" +
+                        ", siteFound=${site != null}" +
+                        ", badCredentials=${
+                            site?.let {
+                                applicationPasswordLoginHelper
+                                    .siteHasBadCredentials(it)
+                            }
+                        }"
+                )
                 _onFinishedEvent.emit(
                     NavigationActionData(
                         showSiteSelector = false,
-                        showPostSignupInterstitial = false,
                         siteUrl = currentUrlLogin?.siteUrl,
                         oldSitesIDs = oldSitesIDs,
                         isError = true
@@ -165,8 +183,6 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
                     NavigationActionData(
                         showSiteSelector = siteStore.hasSite() &&
                                 oldSitesIDs?.contains(site.id) != true, // null or false
-                        showPostSignupInterstitial = !siteStore.hasSite()
-                                && appPrefsWrapper.shouldShowPostSignupInterstitial,
                         siteUrl = currentUrlLogin?.siteUrl,
                         oldSitesIDs = oldSitesIDs,
                         isError = false,
@@ -179,7 +195,6 @@ class ApplicationPasswordLoginViewModel @Inject constructor(
 
     data class NavigationActionData(
         val showSiteSelector: Boolean,
-        val showPostSignupInterstitial: Boolean,
         val siteUrl: String?,
         val oldSitesIDs: ArrayList<Int>?,
         val isError: Boolean,
