@@ -1,4 +1,2 @@
-26.3:
-Wir haben Informationen zur Dateigröße zu deiner Mediathek hinzugefügt, damit du genau sehen kannst, womit du arbeitest.
-
-Außerdem funktioniert der experimentelle Editor jetzt noch flüssiger. Deine Inhalte bleiben erhalten, wenn du dein Gerät drehst oder den Dunkelmodus aktivierst, und Dialogfelder reagieren jetzt richtig auf den Zurück-Button. Viel Spaß beim Bearbeiten!
+26.8:
+Es ist fast Sommer und das bedeutet die Bugs sind nicht weit. Keine Sorge, wir haben hart daran gearbeitet, ihnen Herr zu werden, beispielsweise mit verschiedenen Fehlerbehebungen, durch die die App noch benutzerfreundlicher werden soll. Diese Version enthält den brandneuen Block-Editor. Teste ihn auf jeder Website in den Website-Einstellungen.

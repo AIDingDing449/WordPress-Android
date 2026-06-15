@@ -1,3 +1,2 @@
-26.2:
-- Wir haben Unterstützung für Erwähnungen im experimentellen Editor hinzugefügt, damit du deine Freunde und beteiligte Personen ganz einfach markieren kannst.
-- Die Medienauswahl ist jetzt für alle zugänglicher.
+26.8:
+Der Sommer ist fast da, das bedeutet Ungeziefer. Aber keine Sorge, wir arbeiten hart daran, alles unerwünschte zu erwischen, und haben verschiedene Verbesserungen vorgenommen, damit die App noch benutzerfreundlicher wird. Diese Veröffentlichung enthält den brandneuen Block-Editor – probier ihn auf einer beliebigen Website über die Website-Einstellungen aus.

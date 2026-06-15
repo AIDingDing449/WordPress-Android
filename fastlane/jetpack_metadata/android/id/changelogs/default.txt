@@ -1,4 +1,2 @@
-26,3:
-Kami menambahkan info ukuran berkas ke pustaka media Anda agar Anda dapat melihat dengan tepat apa yang sedang Anda kerjakan.
-
-Penyunting eksperimental juga makin lancar. Konten Anda tidak berubah posisi saat Anda memutar perangkat atau mengaktifkan mode gelap, dan dialog kini merespons dengan baik saat tombol kembali ditekan. Selamat menyunting!
+26.8:
+Ini hampir musim panas, dan itu berarti ancaman bug. Jangan khawatir, kami telah bekerja keras untuk membasminya, dengan beragam perbaikan untuk membuat aplikasi lebih baik lagi untuk digunakan. Rilis ini berisi editor blok baru — silakan coba di situs mana pun dari Pengaturan Situs.

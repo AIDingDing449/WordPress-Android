@@ -1,4 +1,2 @@
-26.3:
-We hebben de informatie van de bestandsgrootte toegevoegd aan je mediabibliotheek, zodat je precies kunt zien waar je mee werkt.
-
-De experimentele editor is ook eenvoudiger geworden. Je content blijft op zijn plek wanneer je je apparaat roteert of de donkere modus inschakelt, en dialoogvensters reageren nu correct op de knop Terug. Veel plezier met bewerken!
+26.8:
+Het is bijna zomer en dat betekent bugs. Maak je geen zorgen, we zijn hard aan het werk geweest om ze te verpletteren, met verschillende oplossingen om de app nog mooier te maken om te gebruiken. Deze release bevat de gloednieuwe blok-editor — probeer het op elke site via Site-instellingen.

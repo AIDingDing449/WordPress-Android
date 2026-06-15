@@ -1,4 +1,2 @@
-26.1 :
-- Les médias s’affichent désormais correctement sur les sites privés dans l’éditeur expérimental.
-- Amélioration des chargements de médias avec une meilleure authentification et de meilleures performances.
-- Correction de divers bugs de chargement et amélioration du traitement global des médias.
+26.8 :
+L’été arrive ! C’est la saison idéale pour corriger les bugs. Nous avons travaillé d’arrache-pied pour en supprimer un maximum, et nous avons ajouté des correctifs pour rendre l’application encore plus agréable à utiliser. Cette version contient le tout nouvel éditeur de blocs. Essayez-le sur n’importe quel site dans les réglages.

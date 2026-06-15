@@ -1,4 +1,2 @@
-26.3:
-Abbiamo aggiunto le informazioni relative alle dimensioni dei file alla tua libreria multimediale, così puoi vedere esattamente con cosa stai lavorando.
-
-Anche l'editor sperimentale è diventato più fluido. I contenuti rimangono invariati quando ruoti il dispositivo o attivi la modalità scura e le finestre di dialogo ora rispondono correttamente al pulsante indietro. Buon editing!
+26,8:
+È quasi estate, e questo significa insetti. Non preoccuparti, abbiamo lavorato sodo per schiacciarli, con correzioni assortite per rendere l'app ancora più bella da usare. Questa versione contiene il nuovissimo editor a blocchi: provalo su qualsiasi sito dalle Impostazioni del sito.
