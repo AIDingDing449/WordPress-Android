@@ -953,7 +953,9 @@ class StatsRepository @Inject constructor(
                         title = item.title,
                         views = item.views,
                         previousViews = previousViews,
-                        isFirst = index == 0
+                        isFirst = index == 0,
+                        url = item.url,
+                        postType = item.postType
                     )
                 },
                 totalViews = totalViews,
@@ -1015,7 +1017,8 @@ class StatsRepository @Inject constructor(
                                 url = child.url,
                                 views = child.views
                             )
-                        }
+                        },
+                        url = item.url
                     )
                 },
                 totalViews = totalViews,
@@ -1426,7 +1429,19 @@ class StatsRepository @Inject constructor(
         keyOf = { it.name },
         metricOf = { it.clicks },
         mapItem = { item, prev ->
-            ClickItemData(item.name, item.clicks, prev)
+            ClickItemData(
+                name = item.name,
+                clicks = item.clicks,
+                previousClicks = prev,
+                url = item.url,
+                children = item.children.map { child ->
+                    MostViewedChildData(
+                        name = child.name,
+                        url = child.url,
+                        views = child.clicks
+                    )
+                }
+            )
         },
         buildSuccess = { items, total, change, pct ->
             ClicksResult.Success(
@@ -2225,7 +2240,9 @@ data class MostViewedItemData(
     val views: Long,
     val previousViews: Long,
     val isFirst: Boolean,
-    val children: List<MostViewedChildData> = emptyList()
+    val children: List<MostViewedChildData> = emptyList(),
+    val url: String? = null,
+    val postType: String? = null
 ) {
     val viewsChange: Long get() = views - previousViews
     val viewsChangePercent: Double
@@ -2386,7 +2403,9 @@ sealed class ClicksResult {
 data class ClickItemData(
     val name: String,
     val clicks: Long,
-    val previousClicks: Long
+    val previousClicks: Long,
+    val url: String? = null,
+    val children: List<MostViewedChildData> = emptyList()
 ) {
     val clicksChange: Long get() = clicks - previousClicks
     val clicksChangePercent: Double
