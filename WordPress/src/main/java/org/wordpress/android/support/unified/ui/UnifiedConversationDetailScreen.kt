@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +83,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -255,6 +256,7 @@ fun UnifiedConversationDetailScreen(
                         UnifiedMessageItem(
                             message = message,
                             timestamp = formatRelativeTime(message.createdAt, resources),
+                            currentUserName = userName,
                             onPreviewAttachment = { previewAttachment = it },
                             onDownloadAttachment = onDownloadAttachment,
                             onLinkClick = onLinkClick,
@@ -442,7 +444,15 @@ private fun MessageBubble(
                 )
 
                 if (message.attachments.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // Bot replies cite the articles they used to answer. A divider plus a label
+                    // makes it clear where the answer ends and the extra reading starts. Only
+                    // shown when the attachments are nothing but links.
+                    val linksOnly = !message.isUser &&
+                            message.attachments.all { it.type == AttachmentType.Link }
+                    Spacer(modifier = Modifier.height(if (linksOnly) 12.dp else 8.dp))
+                    if (linksOnly) {
+                        RelatedLinksHeader()
+                    }
                     message.attachments.forEach { attachment ->
                         AttachmentRow(attachment, onLinkClick)
                     }
@@ -465,16 +475,21 @@ private fun MessageBubble(
 }
 
 @Composable
-private fun AttachmentRow(attachment: UnifiedAttachment, onLinkClick: (String) -> Unit) {
-    val isLink = attachment.type == AttachmentType.Link
-    val linkModifier = if (isLink) {
-        val linkDescription = attachmentLinkDescription(attachment)
-        Modifier
-            .clickable(role = Role.Button) { onLinkClick(attachment.url) }
-            .semantics { contentDescription = linkDescription }
-    } else {
-        Modifier
+private fun RelatedLinksHeader() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DIVIDER_ALPHA))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.unified_support_related_label),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
+}
+
+@Composable
+private fun AttachmentRow(attachment: UnifiedAttachment, onLinkClick: (String) -> Unit) {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         if (attachment.isImage) {
             AsyncImage(
@@ -487,18 +502,24 @@ private fun AttachmentRow(attachment: UnifiedAttachment, onLinkClick: (String) -
             Spacer(modifier = Modifier.height(4.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = attachment.filename,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-                color = if (isLink) MaterialTheme.colorScheme.primary else Color.Unspecified,
-                textDecoration = if (isLink) TextDecoration.Underline else null,
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .then(linkModifier),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (attachment.type == AttachmentType.Link) {
+                // The very same composable the escalated conversation uses, so a source link is
+                // pixel-identical on both sides of an escalation.
+                UnifiedAttachmentLink(
+                    attachment = attachment,
+                    onLinkClick = onLinkClick,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+            } else {
+                Text(
+                    text = attachment.filename,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             attachment.botCitationScore?.let { score ->
                 Text(
                     text = stringResource(
@@ -821,12 +842,14 @@ private fun UnifiedConversationTitleCard(title: String) {
 private fun UnifiedMessageItem(
     message: UnifiedMessage,
     timestamp: String,
+    currentUserName: String,
     onPreviewAttachment: (UnifiedAttachment) -> Unit,
     onDownloadAttachment: (UnifiedAttachment) -> Unit,
     onLinkClick: (String) -> Unit,
     authorizationHeader: String,
 ) {
-    val messageDescription = "${message.authorName}, $timestamp. ${message.formattedText}"
+    val authorName = messageAuthorName(message, currentUserName)
+    val messageDescription = "$authorName, $timestamp. ${message.formattedText}"
 
     Box(
         modifier = Modifier
@@ -851,7 +874,7 @@ private fun UnifiedMessageItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = message.authorName,
+                    text = authorName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (message.isUser) FontWeight.Bold else FontWeight.Normal,
                     color = if (message.isUser) {
@@ -881,6 +904,7 @@ private fun UnifiedMessageItem(
                 Spacer(modifier = Modifier.height(12.dp))
                 UnifiedAttachmentsList(
                     attachments = message.attachments,
+                    isUser = message.isUser,
                     onPreviewAttachment = onPreviewAttachment,
                     onDownloadAttachment = onDownloadAttachment,
                     onLinkClick = onLinkClick,
@@ -895,6 +919,7 @@ private fun UnifiedMessageItem(
 @Composable
 private fun UnifiedAttachmentsList(
     attachments: List<UnifiedAttachment>,
+    isUser: Boolean,
     onPreviewAttachment: (UnifiedAttachment) -> Unit,
     onDownloadAttachment: (UnifiedAttachment) -> Unit,
     onLinkClick: (String) -> Unit,
@@ -905,8 +930,13 @@ private fun UnifiedAttachmentsList(
     val (links, files) = attachments.partition { it.type == AttachmentType.Link }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Same divider as the bot chat, shown only when the reply carries nothing but links.
+        if (!isUser && links.isNotEmpty() && files.isEmpty()) {
+            RelatedLinksHeader()
+        }
+
         links.forEach { attachment ->
-            UnifiedAttachmentLink(attachment, onLinkClick)
+            UnifiedAttachmentLink(attachment, onLinkClick, Modifier.fillMaxWidth())
         }
 
         if (files.isNotEmpty()) {
@@ -931,6 +961,31 @@ private fun UnifiedAttachmentsList(
     }
 }
 
+/**
+ * The name shown above a message in an escalated (Happiness Engineer) conversation. The unified
+ * conversations endpoint labels the author with raw backend values — "bot" for the assistant and the
+ * bare WP.com login for the current user — so both are replaced with the same names the bot chat
+ * uses before escalation, and only Happiness Engineers keep the name the API returns.
+ */
+@VisibleForTesting
+internal fun resolveMessageAuthorName(
+    message: UnifiedMessage,
+    currentUserName: String,
+    assistantName: String,
+): String = when {
+    message.isUser -> currentUserName.ifEmpty { message.authorName }
+    message.isBot -> assistantName
+    else -> message.authorName
+}
+
+@Composable
+private fun messageAuthorName(message: UnifiedMessage, currentUserName: String): String =
+    resolveMessageAuthorName(
+        message = message,
+        currentUserName = currentUserName,
+        assistantName = stringResource(R.string.unified_support_status_ai_assistant)
+    )
+
 @Composable
 private fun attachmentLinkDescription(attachment: UnifiedAttachment): String =
     stringResource(
@@ -939,11 +994,14 @@ private fun attachmentLinkDescription(attachment: UnifiedAttachment): String =
     )
 
 @Composable
-private fun UnifiedAttachmentLink(attachment: UnifiedAttachment, onLinkClick: (String) -> Unit) {
+private fun UnifiedAttachmentLink(
+    attachment: UnifiedAttachment,
+    onLinkClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val linkDescription = attachmentLinkDescription(attachment)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(role = Role.Button) {
                 onLinkClick(attachment.url)
             }
@@ -1114,10 +1172,7 @@ private fun WelcomeHeader(userName: String) {
  */
 @StringRes
 private fun replyCtaLabelRes(conversation: UnifiedConversation): Int {
-    val lastMessage = conversation.messages.lastOrNull()
-    val isSupportAwaitingReply = lastMessage != null &&
-            lastMessage.authorRole != UnifiedMessage.AUTHOR_ROLE_USER &&
-            lastMessage.authorRole != UnifiedMessage.AUTHOR_ROLE_BOT
+    val isSupportAwaitingReply = conversation.messages.lastOrNull()?.isSupport == true
     return if (isSupportAwaitingReply) {
         R.string.he_support_reply_button
     } else {
@@ -1126,6 +1181,7 @@ private fun replyCtaLabelRes(conversation: UnifiedConversation): Int {
 }
 
 private const val PERCENT_MULTIPLIER = 100
+private const val DIVIDER_ALPHA = 0.3f
 private const val TYPING_DOT_DELAY_STEP = 150
 private const val TYPING_DOT_PULSE_MS = 600L
 private const val TYPING_DOT_MIN_ALPHA = 0.3f
