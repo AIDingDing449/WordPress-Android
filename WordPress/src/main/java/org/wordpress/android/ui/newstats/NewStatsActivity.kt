@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -172,6 +173,10 @@ class NewStatsActivity : BaseAppCompatActivity() {
     @Inject
     lateinit var activityNavigator: ActivityNavigator
 
+    // The same instance the composables below obtain with viewModel(): both resolve against this
+    // activity's ViewModelStore.
+    private val newStatsViewModel: NewStatsViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // New Stats always shows the currently selected site, so when launched for a specific
@@ -228,6 +233,14 @@ class NewStatsActivity : BaseAppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Coming back counts as entering the screen, including after hours in the background: what
+        // the cards still hold in memory may no longer be current, so each one refreshes it once the
+        // next time it loads.
+        newStatsViewModel.onScreenEntered()
+    }
+
     /**
      * Mirrors what old Stats reports from StatsViewModel, so the two screens stay comparable in
      * analytics for the length of the rollout. Called after [selectSiteFromIntentIfNeeded] so the
@@ -252,13 +265,17 @@ class NewStatsActivity : BaseAppCompatActivity() {
     }
 
     private fun openPostDetailStats(item: MostViewedItem) {
-        analyticsTracker.track(Stat.STATS_POSTS_AND_PAGES_ITEM_TAPPED)
+        analyticsTracker.track(
+            Stat.STATS_POSTS_AND_PAGES_ITEM_TAPPED,
+            selectedSiteRepository.getSelectedSite()
+        )
         PostStatsDetailActivity.start(this, item.id, item.title)
     }
 
     private fun openLatestPostStats(postId: Long, title: String) {
         analyticsTracker.track(
-            Stat.STATS_LATEST_POST_SUMMARY_VIEW_POST_DETAILS_TAPPED
+            Stat.STATS_LATEST_POST_SUMMARY_VIEW_POST_DETAILS_TAPPED,
+            selectedSiteRepository.getSelectedSite()
         )
         PostStatsDetailActivity.start(this, postId, title)
     }
@@ -293,7 +310,7 @@ class NewStatsActivity : BaseAppCompatActivity() {
      * finishing this activity straight away would tear the dialog down with it.
      */
     private fun switchToOldStats() {
-        analyticsTracker.track(Stat.STATS_NEW_STATS_DISABLED)
+        analyticsTracker.track(Stat.STATS_NEW_STATS_DISABLED, selectedSiteRepository.getSelectedSite())
         newStatsRouting.optOut()
     }
 
@@ -820,6 +837,9 @@ private fun TrafficTabContent(
         isRefreshing = isRefreshing,
         state = pullToRefreshState,
         onRefresh = {
+            // Empty the cache first, synchronously: the refreshes dispatched below must all reach the
+            // network, and a coroutine hop here would race them.
+            newStatsViewModel.invalidateStatsCache()
             newStatsViewModel.checkNetworkStatus()
             visibleCards.dispatchToVisibleCards(
                 onTodaysStats = { todaysStatsViewModel.refresh() },
