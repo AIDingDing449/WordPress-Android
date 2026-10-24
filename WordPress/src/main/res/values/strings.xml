@@ -1735,6 +1735,19 @@
     <string name="stats_utm_medium">Medium</string>
     <string name="stats_utm_campaign">Campaign</string>
 
+    <!-- Archive Stats Card -->
+    <string name="stats_archives_title">Archives</string>
+    <string name="stats_archives_title_label">Archive pages</string>
+    <string name="stats_archives_section_search">Search terms</string>
+    <string name="stats_archives_section_categories">Categories</string>
+    <string name="stats_archives_section_tags">Tags</string>
+    <string name="stats_archives_section_authors">Authors</string>
+    <string name="stats_archives_section_dates">Dates</string>
+    <string name="stats_archives_section_error">Error</string>
+    <string name="stats_archives_section_aggregated">Aggregated</string>
+    <string name="stats_archives_section_other">Other</string>
+    <string name="stats_archives_section_taxonomies">Taxonomies</string>
+
     <!-- Subscribers Stats Cards -->
     <string name="stats_subscribers_all_time">All-time Subscribers</string>
     <string name="stats_subscribers_graph">Subscribers Graph</string>
@@ -5000,6 +5013,10 @@ translators: %s: Select control option value e.g: "Auto, 25%". -->
     <string name="content_list_group_this_week">This week</string>
     <string name="content_list_group_earlier_in">Earlier in %1$s</string>
     <string name="content_list_fab_write">Write</string>
+    <string name="content_list_view_count_singular">%1$s view</string>
+    <string name="content_list_view_count_plural">%1$s views</string>
+    <string name="content_list_comment_count_singular">%1$s comment</string>
+    <string name="content_list_comment_count_plural">%1$s comments</string>
     <string name="content_list_density_show_condensed">Show condensed list</string>
     <string name="content_list_density_show_comfortable">Show expanded list</string>
     <string name="comment_trash_has_replies">This comment has replies. They won’t be moved to the trash with it.</string>
