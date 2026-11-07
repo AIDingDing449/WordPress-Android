@@ -107,8 +107,6 @@ import org.wordpress.android.networking.GlideAuthInterceptor;
 import org.wordpress.android.ui.posts.prepublishing.social.PrepublishingSocialFragment;
 import org.wordpress.android.ui.posts.prepublishing.tags.PrepublishingTagsFragment;
 import org.wordpress.android.ui.posts.services.AztecVideoLoader;
-import org.wordpress.android.ui.prefs.AppSettingsActivity;
-import org.wordpress.android.ui.prefs.AppSettingsFragment;
 import org.wordpress.android.ui.prefs.BlogPreferencesActivity;
 import org.wordpress.android.ui.prefs.SiteSettingsFragment;
 import org.wordpress.android.ui.prefs.SiteSettingsInterface;
@@ -134,7 +132,6 @@ import org.wordpress.android.ui.reader.SubfilterBottomSheetFragment;
 import org.wordpress.android.ui.reader.adapters.CommentSnippetAdapter;
 import org.wordpress.android.ui.reader.adapters.ReaderCommentAdapter;
 import org.wordpress.android.ui.reader.discover.interests.ReaderInterestsFragment;
-import org.wordpress.android.ui.reader.services.update.ReaderUpdateLogic;
 import org.wordpress.android.ui.reader.views.ReaderCommentsPostHeaderView;
 import org.wordpress.android.ui.reader.views.ReaderExpandableTagsView;
 import org.wordpress.android.ui.reader.views.ReaderPostDetailHeaderView;
@@ -211,7 +208,6 @@ public interface AppComponent {
 
     void inject(BlogPreferencesActivity object);
 
-    void inject(AppSettingsFragment object);
 
     void inject(PeopleListFragment object);
 
@@ -280,8 +276,6 @@ public interface AppComponent {
     void inject(NotificationsPendingDraftsReceiver object);
 
     void inject(NotificationsDetailListFragment object);
-
-    void inject(ReaderUpdateLogic object);
 
     void inject(ReaderPostDetailFragment object);
 
@@ -407,8 +401,6 @@ public interface AppComponent {
     void inject(PostSettingsTagsFragment object);
 
     void inject(PrepublishingPublishSettingsFragment object);
-
-    void inject(AppSettingsActivity object);
 
     void inject(FeatureAnnouncementDialogFragment object);
 
