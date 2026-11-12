@@ -8,6 +8,22 @@ What belongs here and how to write an entry: [`USER-FACING-CHANGES-DOCUMENTATION
 
 <!-- Add new entries directly below this line. -->
 
+- **AI support chat says up front that you are chatting with AI**
+  The support chat now shows a fixed line above the conversation: "You're chatting with AI from WordPress.com Support." It sits outside the scrolling messages, so it stays visible however long the conversation gets, and it is there from the moment the chat opens, before the first reply. It appears in every AI chat, whether newly started or reopened from the list. Once a conversation has been handed to a Happiness Engineer and become a ticket, the ticket view does not show it.
+  - **Apps:** Both
+  - **Type:** New
+  - **Availability:** Everyone
+  - **Where:** Me → Help & Support → Get help → any AI Assistant conversation; also the older Contact Support chat reached from the post editor
+  - **Notes:** Required by the EU AI Act (Art. 50), which asks for this label at the top of the chat rather than in a footer, everywhere in the world. The wording is written by the app, never by the bot, and is translated like any other string; "WordPress.com" in it is not translated. Both apps name WordPress.com, because that is who provides the support, so the Jetpack app says WordPress.com too. It is announced by screen readers along with the rest of the screen, and it wraps onto more lines rather than being cut off at larger text sizes.
+
+- **Inactive sites no longer appear in the site list**
+  Sites that WordPress.com reports as inactive, such as a self-hosted Jetpack site whose domain has expired, are no longer listed. Previously they stayed in the list, and removing one with the X button only lasted until the next refresh.
+  - **Apps:** Both
+  - **Type:** Fixed
+  - **Availability:** Everyone
+  - **Where:** My Site → site switcher
+  - **Notes:** Inactive sites already on the device are removed on the next site refresh. A site that still has unsynced local posts is kept until those are dealt with. This matches what the iOS app and the WordPress.com web dashboard already show.
+
 - **Referrers and Clicks in Stats show each source's icon**
   Rows in the redesigned Stats' Referrers and Clicks cards, and their full lists, now show the site icon the Stats API already reports for the referrer or link, matching the web version. A row the API has no icon for shows none, and its title stays where it was. Expanding a referrer group, such as Search Engines, shows an icon for each entry under it too.
   - **Apps:** Both
@@ -25,12 +41,12 @@ What belongs here and how to write an entry: [`USER-FACING-CHANGES-DOCUMENTATION
   - **Notes:** The glyph appears immediately and the featured images fill in a moment later, so a row can briefly show a glyph for a post that does have an image. The list can run to hundreds of rows, so images are resolved for the rows you have scrolled to rather than all of them at once. A post whose featured image can't be loaded keeps its glyph rather than showing an empty square. Only posts and pages are looked up; a site's homepage and attachments have no featured image of their own and always show the page glyph. Images are fetched from the site's own REST API, not from Stats, so a site the app can't reach for posts shows glyphs throughout.
 
 - **Post preview works on sites connected with an Application Password**
-  On a self-hosted site added with an Application Password, previewing a post shows the site's own login page instead of failing with "Incorrect username or password". After logging in there, the preview loads, and later previews open directly while that login lasts.
+  On a self-hosted site added with an Application Password, previewing a post no longer fails with "Incorrect username or password". A published post opens straight away, as a visitor sees it; if the site doesn't serve it to visitors, the login page follows. A draft, or any other post the site doesn't serve publicly, shows the site's own login page first; after logging in there the preview loads, and later previews open directly while that login lasts.
   - **Apps:** Both
   - **Type:** Fixed
   - **Availability:** Everyone
   - **Where:** Post editor → ⋮ → Preview; Posts → View
-  - **Notes:** WordPress only accepts Application Passwords for API requests, so the preview needs the account's real password once. Ticking "Remember Me" keeps the login for 14 days; without it, the login lasts until the session ends. Sites added with the account password are unchanged and still log in automatically.
+  - **Notes:** WordPress only accepts Application Passwords for API requests, so a preview that needs a logged-in reader asks for the account's real password once. Ticking "Remember Me" keeps the login for 14 days; without it, the login lasts until the session ends. Sites added with the account password are unchanged and still log in automatically.
 
 - **Reader comments: replies are written in a sheet**
   The Reader's comments screen was rebuilt. The always-visible comment box at the bottom is now a bar that opens a reply sheet, the same one site comments use, with @-mention suggestions; the full-screen expand button is gone. Closing the sheet with text typed asks whether to save the draft, delete it or keep editing. Tapping Reply under a comment opens the sheet for that comment.
