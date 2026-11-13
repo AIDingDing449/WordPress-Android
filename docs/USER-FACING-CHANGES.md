@@ -8,6 +8,22 @@ What belongs here and how to write an entry: [`USER-FACING-CHANGES-DOCUMENTATION
 
 <!-- Add new entries directly below this line. -->
 
+- **Reader: a site unblocked on the web shows its posts again in the app**
+  If you blocked a site in the app's Reader and later unblocked it on the web, the site's posts now come back the next time the app refreshes the sites you follow. Before, the site was back in your subscriptions but its stream stayed at "This blog is empty" until you logged out and back in.
+  - **Apps:** Both
+  - **Type:** Fixed
+  - **Availability:** Everyone
+  - **Where:** Reader → Subscriptions, and the unblocked site's stream
+  - **Notes:** Unblocking a site on the web subscribes you to it again, and that is how the app finds out. A site you blocked without being subscribed to it comes back only after you subscribe to it, or log out and back in.
+
+- **Reader search reports a subscribe that couldn't start**
+  On the Sites tab of Reader search, tapping Subscribe on a site that can't be subscribed to from there now shows the "Unable to subscribe to this blog" message, the same one shown when the request fails. Previously the button just flipped back without saying anything.
+  - **Apps:** Both
+  - **Type:** Changed
+  - **Availability:** Everyone
+  - **Where:** Reader → Search → Sites → Subscribe
+  - **Notes:** Rare: it happens when the app has the site's feed on record but no feed address for it. Unsubscribing from the same place shows the matching "Unable to unsubscribe from blog" message.
+
 - **AI support chat says up front that you are chatting with AI**
   The support chat now shows a fixed line above the conversation: "You're chatting with AI from WordPress.com Support." It sits outside the scrolling messages, so it stays visible however long the conversation gets, and it is there from the moment the chat opens, before the first reply. It appears in every AI chat, whether newly started or reopened from the list. Once a conversation has been handed to a Happiness Engineer and become a ticket, the ticket view does not show it.
   - **Apps:** Both
